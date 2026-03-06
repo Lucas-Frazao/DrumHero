@@ -1,0 +1,12 @@
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\DrumHero.csproj.AssemblyReference.cache
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\Views\Controls\DrumHighwayControl.baml
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\MainWindow.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\Views\AnalysisProgressView.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\Views\Controls\DrumHighwayControl.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\Views\LibraryView.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\Views\PracticeView.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\Views\SettingsView.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\App.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\DrumHero_MarkupCompile.cache
+C:\GeneralProjects\DrumHero\DrumHero\obj\Release\net8.0-windows\DrumHero_MarkupCompile.lref

@@ -1,0 +1,391 @@
+<UserControl x:Class="DrumHero.Views.PracticeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DrumHero.Views.Controls"
+             xmlns:vm="clr-namespace:DrumHero.ViewModels"
+             d:DataContext="{d:DesignInstance vm:PracticeViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="#1A1A2E">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Top Bar: Song info + controls -->
+        <Border Grid.Row="0" Background="#16213E" Padding="15,10">
+            <DockPanel>
+                <!-- Back button -->
+                <Button Content="← Back" DockPanel.Dock="Left" Padding="12,6" Margin="0,0,15,0"
+                        Command="{Binding GoBackCommand}"
+                        Background="#2A2A4A" Foreground="White" BorderThickness="0"
+                        FontFamily="Segoe UI" Cursor="Hand" VerticalAlignment="Center">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                
+                <!-- Song info -->
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,20,0">
+                    <TextBlock Text="{Binding SongTitle}" Foreground="White" FontSize="16" 
+                               FontWeight="SemiBold" FontFamily="Segoe UI"/>
+                    <TextBlock Text="{Binding SongArtist}" Foreground="#808090" FontSize="12" 
+                               FontFamily="Segoe UI"/>
+                </StackPanel>
+                
+                <!-- Accuracy display -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#0A2A40" CornerRadius="6" Padding="12,6" Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Accuracy: " Foreground="#808090" FontSize="13" 
+                                       FontFamily="Segoe UI" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding AccuracyPercent, StringFormat='{}{0:F1}%'}" 
+                                       Foreground="#00E676" FontSize="18" FontWeight="Bold"
+                                       FontFamily="Segoe UI" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#0A2A40" CornerRadius="6" Padding="12,6" Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Foreground="#00E676" FontSize="13" FontFamily="Segoe UI" VerticalAlignment="Center">
+                                <Run Text="✓ "/><Run Text="{Binding HitCount, Mode=OneWay}"/>
+                            </TextBlock>
+                            <TextBlock Text="  " VerticalAlignment="Center"/>
+                            <TextBlock Foreground="#E94560" FontSize="13" FontFamily="Segoe UI" VerticalAlignment="Center">
+                                <Run Text="✗ "/><Run Text="{Binding MissCount, Mode=OneWay}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                
+                <!-- Tempo display -->
+                <Border DockPanel.Dock="Right" Background="#0A2A40" CornerRadius="6" 
+                        Padding="12,6" Margin="5,0" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" FontSize="13" FontFamily="Segoe UI">
+                        <Run Text="{Binding CurrentBpm, StringFormat='{}{0:F0}', Mode=OneWay}"/>
+                        <Run Text=" BPM" Foreground="#808090"/>
+                        <Run Text="  ("/>
+                        <Run Text="{Binding SpeedPercent, StringFormat='{}{0:F0}%', Mode=OneWay}"/>
+                        <Run Text=")"/>
+                    </TextBlock>
+                </Border>
+                
+                <!-- Spacer -->
+                <TextBlock/>
+            </DockPanel>
+        </Border>
+        
+        <!-- Highway -->
+        <controls:DrumHighwayControl x:Name="HighwayControl" Grid.Row="1"/>
+        
+        <!-- Bottom Control Bar -->
+        <Border Grid.Row="2" Background="#16213E" Padding="15,10">
+            <DockPanel>
+                <!-- Playback controls -->
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Play/Pause -->
+                    <Button Padding="12,8" Margin="0,0,5,0" Command="{Binding TogglePlayPauseCommand}"
+                            Background="#0F3460" Foreground="White" BorderThickness="0"
+                            FontFamily="Segoe UI" FontSize="16" Cursor="Hand" Width="50">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Content" Value="▶"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                        <Setter Property="Content" Value="⏸"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    
+                    <!-- Stop -->
+                    <Button Content="⏹" Padding="12,8" Margin="0,0,5,0" Command="{Binding StopCommand}"
+                            Background="#3A2A2A" Foreground="White" BorderThickness="0"
+                            FontFamily="Segoe UI" FontSize="16" Cursor="Hand" Width="50">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    
+                    <!-- Restart -->
+                    <Button Content="↺" Padding="12,8" Margin="0,0,15,0" Command="{Binding RestartCommand}"
+                            Background="#2A2A4A" Foreground="White" BorderThickness="0"
+                            FontFamily="Segoe UI" FontSize="16" Cursor="Hand" Width="50">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    
+                    <!-- Time display -->
+                    <TextBlock VerticalAlignment="Center" Foreground="#B0B0B0" FontFamily="Segoe UI" FontSize="13" Margin="0,0,15,0">
+                        <Run Text="{Binding CurrentTimeDisplay, Mode=OneWay}"/>
+                        <Run Text=" / "/>
+                        <Run Text="{Binding TotalTimeDisplay, Mode=OneWay}"/>
+                    </TextBlock>
+                </StackPanel>
+                
+                <!-- Right side controls -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Speed presets -->
+                    <TextBlock Text="Speed:" Foreground="#808090" FontSize="12" FontFamily="Segoe UI"
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ItemsControl ItemsSource="{Binding SpeedPresets}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding StringFormat='{}{0:F0}%'}" 
+                                        Padding="8,4" Margin="2,0"
+                                        Command="{Binding DataContext.SetSpeedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Background="#2A2A4A" Foreground="White" BorderThickness="0"
+                                        FontFamily="Segoe UI" FontSize="11" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" 
+                                                    CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    
+                    <!-- Metronome toggle -->
+                    <Button Padding="10,6" Margin="10,0,0,0" Command="{Binding ToggleMetronomeCommand}"
+                            Foreground="White" BorderThickness="0" FontFamily="Segoe UI" FontSize="12" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#2A2A4A"/>
+                                <Setter Property="Content" Value="🔇 Metro"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding MetronomeEnabled}" Value="True">
+                                        <Setter Property="Background" Value="#0F3460"/>
+                                        <Setter Property="Content" Value="🔊 Metro"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    
+                    <!-- History toggle -->
+                    <Button Content="📊 History" Padding="10,6" Margin="10,0,0,0"
+                            Command="{Binding ToggleHistoryCommand}"
+                            Background="#2A2A4A" Foreground="White" BorderThickness="0"
+                            FontFamily="Segoe UI" FontSize="12" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+                
+                <!-- Spacer -->
+                <TextBlock/>
+            </DockPanel>
+        </Border>
+        
+        <!-- Performance Summary Overlay -->
+        <Grid Grid.Row="0" Grid.RowSpan="3"
+              Visibility="{Binding ShowPerformanceSummary, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+            <!-- Dim background -->
+            <Border Background="#CC000000"/>
+            
+            <!-- Summary card -->
+            <Border Background="#16213E" CornerRadius="12" Padding="40" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center" Width="450">
+                <StackPanel>
+                    <TextBlock Text="Performance Summary" Foreground="White" FontSize="24"
+                               FontWeight="Bold" FontFamily="Segoe UI" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    
+                    <!-- Big accuracy number -->
+                    <TextBlock HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <Run Text="{Binding AccuracyPercent, StringFormat='{}{0:F1}'}" 
+                             FontSize="64" FontWeight="Bold" Foreground="#00E676"/>
+                        <Run Text="%" FontSize="32" Foreground="#00E676"/>
+                    </TextBlock>
+                    
+                    <!-- Stats grid -->
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding HitCount}" Foreground="#00E676" FontSize="28" 
+                                       FontWeight="Bold" FontFamily="Segoe UI" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Hits" Foreground="#808090" FontSize="12" 
+                                       FontFamily="Segoe UI" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding MissCount}" Foreground="#E94560" FontSize="28" 
+                                       FontWeight="Bold" FontFamily="Segoe UI" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Missed" Foreground="#808090" FontSize="12" 
+                                       FontFamily="Segoe UI" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding TotalNotes}" Foreground="White" FontSize="28" 
+                                       FontWeight="Bold" FontFamily="Segoe UI" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Total" Foreground="#808090" FontSize="12" 
+                                       FontFamily="Segoe UI" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    
+                    <!-- Song/session info -->
+                    <Border Background="#0A1A2E" CornerRadius="6" Padding="15" Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock Foreground="#B0B0B0" FontSize="12" FontFamily="Segoe UI">
+                                <Run Text="Song: "/><Run Text="{Binding SongTitle, Mode=OneWay}" Foreground="White"/>
+                            </TextBlock>
+                            <TextBlock Foreground="#B0B0B0" FontSize="12" FontFamily="Segoe UI" Margin="0,4,0,0">
+                                <Run Text="Difficulty: "/><Run Text="{Binding Difficulty, Mode=OneWay}" Foreground="White"/>
+                            </TextBlock>
+                            <TextBlock Foreground="#B0B0B0" FontSize="12" FontFamily="Segoe UI" Margin="0,4,0,0">
+                                <Run Text="Tempo: "/><Run Text="{Binding SpeedPercent, StringFormat='{}{0:F0}%', Mode=OneWay}" Foreground="White"/>
+                                <Run Text=" ("/>
+                                <Run Text="{Binding CurrentBpm, StringFormat='{}{0:F0} BPM', Mode=OneWay}"/>
+                                <Run Text=")"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="Try Again" Padding="20,10" Margin="0,0,10,0"
+                                Command="{Binding RestartCommand}"
+                                Background="#0F3460" Foreground="White" BorderThickness="0"
+                                FontFamily="Segoe UI" FontSize="14" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button Content="Back to Library" Padding="20,10"
+                                Command="{Binding GoBackCommand}"
+                                Background="#2A2A4A" Foreground="White" BorderThickness="0"
+                                FontFamily="Segoe UI" FontSize="14" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+        
+        <!-- History Overlay -->
+        <Grid Grid.Row="0" Grid.RowSpan="3"
+              Visibility="{Binding ShowHistory, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+            <Border Background="#CC000000" MouseDown="DismissHistoryClick"/>
+            <Border Background="#16213E" CornerRadius="12" Padding="30" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center" Width="600" MaxHeight="500">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,15">
+                        <Button Content="✕" DockPanel.Dock="Right" Padding="8,4"
+                                Command="{Binding ToggleHistoryCommand}"
+                                Background="#3A2A2A" Foreground="White" BorderThickness="0"
+                                FontFamily="Segoe UI" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <TextBlock Text="Practice History" Foreground="White" FontSize="20"
+                                   FontWeight="Bold" FontFamily="Segoe UI"/>
+                    </DockPanel>
+                    
+                    <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding PracticeHistory}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#0A1A2E" CornerRadius="6" Padding="12" Margin="0,2">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Foreground="#B0B0B0" FontSize="12" FontFamily="Segoe UI"
+                                                       Text="{Binding Timestamp, StringFormat='yyyy-MM-dd HH:mm'}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                                                       FontFamily="Segoe UI" VerticalAlignment="Center" Margin="15,0"
+                                                       Text="{Binding AccuracyPercent, StringFormat='{}{0:F1}%'}"/>
+                                            <TextBlock Grid.Column="2" Foreground="#808090" FontSize="11" FontFamily="Segoe UI"
+                                                       VerticalAlignment="Center" Margin="10,0" Text="{Binding Difficulty}"/>
+                                            <TextBlock Grid.Column="3" Foreground="#808090" FontSize="11" FontFamily="Segoe UI"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding TempoPercent, StringFormat='{}{0:F0}%'}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
