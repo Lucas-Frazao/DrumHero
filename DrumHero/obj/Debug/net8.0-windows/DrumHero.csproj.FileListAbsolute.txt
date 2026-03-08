@@ -96,3 +96,4 @@ C:\GeneralProjects\DrumHero\DrumHero\obj\Debug\net8.0-windows\refint\DrumHero.dl
 C:\GeneralProjects\DrumHero\DrumHero\obj\Debug\net8.0-windows\DrumHero.pdb
 C:\GeneralProjects\DrumHero\DrumHero\obj\Debug\net8.0-windows\DrumHero.genruntimeconfig.cache
 C:\GeneralProjects\DrumHero\DrumHero\obj\Debug\net8.0-windows\ref\DrumHero.dll
+C:\GeneralProjects\DrumHero\DrumHero\obj\Debug\net8.0-windows\DrumHero.sourcelink.json
