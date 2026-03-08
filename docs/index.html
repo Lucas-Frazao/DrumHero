@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrumHero — Architecture Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--bg-surface:#161822;--bg-elevated:#1c1f2e;--bg-hover:#252840;
+  --text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#64748b;
+  --border:#2d3148;--border-light:#3d4268;
+  --views:#60a5fa;--viewmodels:#a78bfa;--services:#34d399;
+  --audio:#f97316;--analysis:#fb923c;--persistence:#f472b6;
+  --models:#94a3b8;--infrastructure:#fbbf24;--entry:#ef4444;
+  --converters:#8b5cf6;
+  --di-line:#fbbf24;--ref-line:#60a5fa;--event-line:#f97316;
+  --font-mono:'JetBrains Mono',monospace;--font-sans:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text-primary);font-family:var(--font-sans)}
+body{display:flex;flex-direction:column}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--bg-surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{display:flex;align-items:center;gap:8px}
+.logo svg{width:28px;height:28px}
+.logo-text{font-family:var(--font-mono);font-weight:700;font-size:16px;color:var(--text-primary);letter-spacing:-0.02em}
+.logo-sub{font-size:12px;color:var(--text-muted);font-family:var(--font-mono)}
+.header-controls{display:flex;align-items:center;gap:8px}
+.btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-secondary);font-size:12px;font-family:var(--font-mono);cursor:pointer;transition:all .15s var(--ease);display:flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg-hover);color:var(--text-primary);border-color:var(--border-light)}
+.btn.active{background:var(--bg-hover);color:var(--text-primary);border-color:var(--views)}
+
+/* Main layout */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:280px;background:var(--bg-surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-section{padding:12px 16px;border-bottom:1px solid var(--border)}
+.sidebar-title{font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px}
+
+/* Legend */
+.legend-item{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;transition:opacity .15s}
+.legend-item:hover{opacity:.8}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.legend-label{font-size:12px;color:var(--text-secondary);font-family:var(--font-mono)}
+.legend-count{font-size:11px;color:var(--text-muted);margin-left:auto;font-family:var(--font-mono)}
+
+/* Connection types */
+.conn-item{display:flex;align-items:center;gap:8px;padding:4px 0}
+.conn-line{width:24px;height:2px;flex-shrink:0}
+.conn-line.solid{background:var(--ref-line)}
+.conn-line.dotted{background:repeating-linear-gradient(90deg,var(--di-line) 0 3px,transparent 3px 6px)}
+.conn-line.dashed{background:repeating-linear-gradient(90deg,var(--event-line) 0 5px,transparent 5px 8px)}
+.conn-label{font-size:12px;color:var(--text-secondary);font-family:var(--font-mono)}
+
+/* External deps */
+.ext-dep{display:flex;align-items:center;gap:8px;padding:4px 0}
+.ext-icon{width:18px;height:18px;border-radius:4px;background:var(--bg-hover);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--font-mono);color:var(--text-muted);flex-shrink:0;border:1px solid var(--border)}
+.ext-name{font-size:12px;color:var(--text-secondary);font-family:var(--font-mono)}
+
+/* Canvas area */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+.canvas-bg{position:absolute;inset:0;opacity:.25}
+#diagram-svg{width:100%;height:100%;cursor:grab}
+#diagram-svg.dragging{cursor:grabbing}
+
+/* Info panel */
+.info-panel{position:absolute;bottom:16px;right:16px;width:360px;max-height:50vh;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;padding:0;overflow:hidden;opacity:0;transform:translateY(8px);pointer-events:none;transition:all .2s var(--ease);z-index:50;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.info-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.info-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.info-header .layer-badge{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.04em}
+.info-header .file-name{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--text-primary)}
+.info-body{padding:12px 16px;overflow-y:auto;max-height:calc(50vh - 60px)}
+.info-section{margin-bottom:12px}
+.info-section:last-child{margin-bottom:0}
+.info-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:4px}
+.info-text{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.info-list{list-style:none;padding:0}
+.info-list li{font-size:12px;color:var(--text-secondary);font-family:var(--font-mono);padding:2px 0;display:flex;align-items:center;gap:6px}
+.info-list li::before{content:'';width:6px;height:6px;border-radius:2px;flex-shrink:0}
+.info-list li.dep-in::before{background:var(--ref-line)}
+.info-list li.dep-out::before{background:var(--services)}
+.info-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;padding:4px}
+.info-close:hover{color:var(--text-primary)}
+
+/* Zoom controls */
+.zoom-controls{position:absolute;bottom:16px;left:16px;display:flex;flex-direction:column;gap:4px;z-index:50}
+.zoom-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-secondary);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s var(--ease)}
+.zoom-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+
+/* Minimap */
+.minimap{position:absolute;top:16px;right:16px;width:200px;height:140px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;z-index:50;opacity:.8;transition:opacity .2s}
+.minimap:hover{opacity:1}
+.minimap-viewport{position:absolute;border:1.5px solid var(--views);border-radius:2px;pointer-events:none;transition:all .05s linear}
+
+/* Search */
+.search-wrap{padding:8px 16px;border-bottom:1px solid var(--border)}
+.search-input{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-primary);font-size:12px;font-family:var(--font-mono);outline:none;transition:border-color .15s}
+.search-input::placeholder{color:var(--text-muted)}
+.search-input:focus{border-color:var(--views)}
+
+/* Scrollable sidebar content */
+.sidebar-scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+
+/* Node highlight animation */
+@keyframes pulse-ring{0%{stroke-opacity:.6;stroke-width:3}100%{stroke-opacity:0;stroke-width:8}}
+
+/* Footer */
+.footer{padding:6px 20px;background:var(--bg-surface);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.footer a{color:var(--text-muted);font-size:11px;text-decoration:none;font-family:var(--font-mono)}
+.footer a:hover{color:var(--text-secondary)}
+.stats{font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="24" height="24" rx="5" stroke="#ef4444" stroke-width="2"/>
+        <circle cx="14" cy="14" r="6" stroke="#60a5fa" stroke-width="1.5"/>
+        <circle cx="14" cy="14" r="2" fill="#a78bfa"/>
+        <line x1="14" y1="2" x2="14" y2="8" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="14" y1="20" x2="14" y2="26" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="14" x2="8" y2="14" stroke="#f97316" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="20" y1="14" x2="26" y2="14" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">DrumHero</span>
+      <span class="logo-sub">Architecture</span>
+    </div>
+  </div>
+  <div class="header-controls">
+    <button class="btn" id="btn-reset" title="Reset view">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      Reset
+    </button>
+    <button class="btn" id="btn-fit" title="Fit to screen">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      Fit
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="search-input" placeholder="Search files...">
+    </div>
+    <div class="sidebar-scroll">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Layers</div>
+        <div id="legend-layers"></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">Connection Types</div>
+        <div class="conn-item"><div class="conn-line solid"></div><span class="conn-label">Direct reference</span></div>
+        <div class="conn-item"><div class="conn-line dotted"></div><span class="conn-label">DI injection</span></div>
+        <div class="conn-item"><div class="conn-line dashed"></div><span class="conn-label">Event / callback</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">External Dependencies</div>
+        <div id="ext-deps"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvas-wrap">
+    <svg id="diagram-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e2235" stroke-width="0.5"/>
+        </pattern>
+        <marker id="arrow-ref" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 3 L 0 6 z" fill="var(--ref-line)" opacity="0.6"/>
+        </marker>
+        <marker id="arrow-di" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 3 L 0 6 z" fill="var(--di-line)" opacity="0.6"/>
+        </marker>
+        <marker id="arrow-event" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 3 L 0 6 z" fill="var(--event-line)" opacity="0.6"/>
+        </marker>
+        <filter id="glow-filter">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <rect width="10000" height="10000" fill="url(#grid-pattern)" class="canvas-bg"/>
+      <g id="diagram-root">
+        <g id="edges-group"></g>
+        <g id="layer-labels-group"></g>
+        <g id="nodes-group"></g>
+      </g>
+    </svg>
+
+    <div class="minimap" id="minimap">
+      <canvas id="minimap-canvas" width="200" height="140"></canvas>
+      <div class="minimap-viewport" id="minimap-vp"></div>
+    </div>
+
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
+      <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
+    </div>
+
+    <div class="info-panel" id="info-panel">
+      <button class="info-close" id="info-close">&times;</button>
+      <div class="info-header">
+        <span class="layer-badge" id="info-badge"></span>
+        <span class="file-name" id="info-filename"></span>
+      </div>
+      <div class="info-body" id="info-body"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span class="stats" id="footer-stats"></span>
+  <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+</div>
+
+<script>
+// ─── DATA ──────────────────────────────────────────────
+const LAYERS = {
+  entry:          { label: 'Entry / Shell',   color: '#ef4444', order: 0 },
+  views:          { label: 'Views',           color: '#60a5fa', order: 1 },
+  viewmodels:     { label: 'ViewModels',      color: '#a78bfa', order: 2 },
+  services:       { label: 'Services',        color: '#34d399', order: 3 },
+  audio:          { label: 'Audio',           color: '#f97316', order: 4 },
+  analysis:       { label: 'Analysis',        color: '#fb923c', order: 5 },
+  persistence:    { label: 'Persistence',     color: '#f472b6', order: 6 },
+  models:         { label: 'Models',          color: '#94a3b8', order: 7 },
+  models2:        { label: '',                color: '#94a3b8', order: 7.5, hidden: true },
+  infrastructure: { label: 'Infrastructure',  color: '#fbbf24', order: 8 },
+  converters:     { label: 'Converters',      color: '#8b5cf6', order: 9 },
+};
+
+const NODES = [
+  // Entry
+  { id:'app_cs', label:'App.xaml.cs', layer:'entry', desc:'Application entry point. Configures DI (Microsoft.Extensions.DI), registers all singletons/transients, creates MainWindow. Resolves Python venv path for Demucs.', methods:['ConfigureServices()','OnStartup()'], path:'DrumHero/App.xaml.cs' },
+  { id:'app_xaml', label:'App.xaml', layer:'entry', desc:'XAML resources. Registers global converters: BoolToVisibilityConverter, ZeroToVisibleConverter, IntToBoolConverter.', methods:['ResourceDictionary'], path:'DrumHero/App.xaml' },
+  { id:'mainwindow_cs', label:'MainWindow.xaml.cs', layer:'entry', desc:'Code-behind. Receives MainViewModel and NavigationService via constructor injection, sets DataContext.', methods:['MainWindow(MainViewModel, NavigationService)'], path:'DrumHero/MainWindow.xaml.cs' },
+  { id:'mainwindow_xaml', label:'MainWindow.xaml', layer:'entry', desc:'Main window XAML. Defines DataTemplate mappings for all ViewModels→Views. ContentControl binds to Navigation.CurrentViewModel.', methods:['DataTemplate mappings','ContentControl binding'], path:'DrumHero/MainWindow.xaml' },
+
+  // Views
+  { id:'library_view', label:'LibraryView', layer:'views', desc:'Song library UI. Displays list of imported songs with add/remove/open actions.', methods:['LibraryView()'], path:'DrumHero/Views/LibraryView.xaml' },
+  { id:'practice_view', label:'PracticeView', layer:'views', desc:'Practice session UI with drum highway display, playback controls, and performance stats.', methods:['PracticeView()'], path:'DrumHero/Views/PracticeView.xaml' },
+  { id:'settings_view', label:'SettingsView', layer:'views', desc:'Settings configuration UI for audio/MIDI devices, difficulty, and API config.', methods:['SettingsView()'], path:'DrumHero/Views/SettingsView.xaml' },
+  { id:'analysis_view', label:'AnalysisProgressView', shortLabel:'AnalysisProgress', layer:'views', desc:'Analysis progress/status UI. Shows progress bar and status messages during song import.', methods:['AnalysisProgressView()'], path:'DrumHero/Views/AnalysisProgressView.xaml' },
+  { id:'highway_control', label:'DrumHighwayControl', shortLabel:'DrumHighway', layer:'views', desc:'Custom WPF control rendering the scrolling drum highway (Guitar Hero-style note display).', methods:['OnRender()','UpdateNotes()'], path:'DrumHero/Views/Controls/DrumHighwayControl.xaml' },
+
+  // ViewModels
+  { id:'main_vm', label:'MainViewModel', layer:'viewmodels', desc:'Root VM. Holds NavigationService. InitializeAsync navigates to LibraryViewModel.', methods:['InitializeAsync()','Navigation (property)'], path:'DrumHero/ViewModels/MainViewModel.cs' },
+  { id:'library_vm', label:'LibraryViewModel', layer:'viewmodels', desc:'Song library screen. Songs collection, AddSong (file dialog → AnalysisProgressVM), OpenSong (→ PracticeVM), RemoveSong, OpenSettings.', methods:['AddSongCommand','OpenSongCommand','RemoveSongCommand','LoadSongsAsync()'], path:'DrumHero/ViewModels/LibraryViewModel.cs' },
+  { id:'practice_vm', label:'PracticeViewModel', layer:'viewmodels', desc:'Practice screen. Manages playback state, tempo control, metronome, difficulty, performance tracking (accuracy/hits/misses), volume controls, practice history. 60fps DispatcherTimer.', methods:['PlayPauseCommand','StopCommand','ChangeTempoCommand','UpdateUI (timer)','LaneFlash events'], path:'DrumHero/ViewModels/PracticeViewModel.cs' },
+  { id:'settings_vm', label:'SettingsViewModel', layer:'viewmodels', desc:'Settings screen. Audio output device selection, MIDI input device selection, difficulty, buffer size, timing offset, count-in, API config.', methods:['SaveCommand','RefreshDevicesCommand','LoadSettingsAsync()'], path:'DrumHero/ViewModels/SettingsViewModel.cs' },
+  { id:'analysis_vm', label:'AnalysisProgressViewModel', shortLabel:'AnalysisProgressVM', layer:'viewmodels', desc:'Analysis progress screen. Shows progress bar, status, stage info. Runs SongImportService.ImportAsync with progress reporting. Cancel support.', methods:['CancelCommand','AnalysisCompleted (event)','Progress reporting'], path:'DrumHero/ViewModels/AnalysisProgressViewModel.cs' },
+
+  // Services
+  { id:'song_import', label:'SongImportService', layer:'services', desc:'Orchestrates song import: validates FLAC, reads metadata (TagLib), creates Song record, runs analysis (IAnalysisService), stores assets, updates song.', methods:['ImportAsync()','ValidateFlac()','ReadMetadata()'], path:'DrumHero/Services/SongImportService.cs' },
+  { id:'song_library', label:'SongLibraryService', layer:'services', desc:'Facade for song library operations: GetAllSongs, GetSongById, DeleteSong (cascades to runs + files), GetPracticeHistory, UpdateLastPracticed.', methods:['GetAllSongsAsync()','DeleteSongAsync()','GetPracticeHistoryAsync()'], path:'DrumHero/Services/SongLibraryService.cs' },
+  { id:'settings_svc', label:'SettingsService', layer:'services', desc:'Thin caching wrapper over SettingsRepository. GetSettingsAsync (cached), SaveSettingsAsync.', methods:['GetSettingsAsync()','SaveSettingsAsync()'], path:'DrumHero/Services/SettingsService.cs' },
+  { id:'practice_session', label:'PracticeSessionService', shortLabel:'PracticeSession', layer:'services', desc:'THE CENTRAL ORCHESTRATOR. Loads song, manages playback via AudioPlaybackEngine, processes MIDI input, coordinates hit detection, saves performance. EnsureSeparatedAssetsAsync re-runs analysis if stems missing.', methods:['StartAsync()','Stop()','ProcessMidiInput()','EnsureSeparatedAssetsAsync()','SavePracticeRun()'], path:'DrumHero/Services/PracticeSessionService.cs' },
+
+  // Audio
+  { id:'audio_engine', label:'AudioPlaybackEngine', shortLabel:'AudioPlayback', layer:'audio', desc:'WASAPI audio output via NAudio. MixingSampleProvider mixing backing track + drum stem + metronome. Volume control, Play/Pause/Stop/Seek. EnsureStereo44100 resampling.', methods:['Play()','Pause()','Stop()','Seek()','LoadTrack()','GetOutputDevices()'], path:'DrumHero/Audio/AudioPlaybackEngine.cs' },
+  { id:'midi_engine', label:'MidiInputEngine', layer:'audio', desc:'MIDI input via NAudio.Midi. Opens MidiIn device, fires NoteOnReceived events. Device enumeration.', methods:['Start()','Stop()','NoteOnReceived (event)','GetMidiDevices()'], path:'DrumHero/Audio/MidiInputEngine.cs' },
+  { id:'hit_detection', label:'HitDetectionEngine', shortLabel:'HitDetection', layer:'audio', desc:'Compares MIDI hits against HighwayNotes within timing window. ProcessHit finds best matching note by lane+time. UpdateMissedNotes.', methods:['ProcessHit()','UpdateMissedNotes()','NoteHit (event)','NoteMissed (event)','ExtraHit (event)'], path:'DrumHero/Audio/HitDetectionEngine.cs' },
+  { id:'metronome', label:'MetronomeProvider', layer:'audio', desc:'ISampleProvider generating click audio at BPM. Accent on beat 1, normal clicks on others. Pre-generated sine wave with exponential decay.', methods:['Read()','SetBPM()','SetTimeSignature()'], path:'DrumHero/Audio/MetronomeProvider.cs' },
+  { id:'time_stretch', label:'TimeStretchEngine', layer:'audio', desc:'TimeStretchProvider wraps SoundTouch.Net for tempo change without pitch shift. Static helper converts speed%→tempo change.', methods:['CreateProvider()','GetTempoChange()','Speed presets'], path:'DrumHero/Audio/TimeStretchEngine.cs' },
+
+  // Analysis
+  { id:'i_analysis', label:'IAnalysisService', layer:'analysis', desc:'Interface for analysis. AnalyzeAsync(flacPath, outputDir, progress, cancel) → AnalysisResult.', methods:['AnalyzeAsync()','AnalysisResult','AnalysisProgress'], path:'DrumHero/Analysis/IAnalysisService.cs' },
+  { id:'demucs_svc', label:'DemucsAnalysisService', shortLabel:'DemucsAnalysis', layer:'analysis', desc:'Local Demucs implementation. Runs Python subprocess for stem separation. FLAC→WAV conversion. Transcription via onset detection + spectral centroid. HPSS/NAudio fallbacks.', methods:['AnalyzeAsync()','RunDemucs()','Transcribe()','FallbackHPSS()'], path:'DrumHero/Analysis/DemucsAnalysisService.cs' },
+  { id:'http_analysis', label:'HttpAnalysisService', shortLabel:'HttpAnalysis', layer:'analysis', desc:'Cloud API implementation. POST /analyze → poll /status/{jobId} → download /results/{jobId}/*. Uses HttpClient with Bearer auth.', methods:['AnalyzeAsync()','PollStatus()','DownloadResults()'], path:'DrumHero/Analysis/HttpAnalysisService.cs' },
+
+  // Persistence
+  { id:'file_storage', label:'FileStorageService', layer:'persistence', desc:'Manages file system paths. BaseDataPath = %LocalAppData%/DrumHero. Creates Songs subdirectory. Store/resolve/delete assets.', methods:['CreateSongDirectory()','StoreAsset()','DeleteSongFiles()','BaseDataPath'], path:'DrumHero/Persistence/FileStorageService.cs' },
+  { id:'db_manager', label:'DatabaseManager', layer:'persistence', desc:'Creates/manages SQLite database via Microsoft.Data.Sqlite. Creates tables: Songs, PracticeRuns, Settings. WAL mode.', methods:['Initialize()','CreateConnection()','CreateTables()'], path:'DrumHero/Persistence/DatabaseManager.cs' },
+  { id:'song_repo', label:'SongRepository', layer:'persistence', desc:'CRUD for Songs table. Maps SqliteDataReader→Song.', methods:['AddSongAsync()','UpdateSongAsync()','GetAllSongsAsync()','GetSongByIdAsync()','DeleteSongAsync()'], path:'DrumHero/Persistence/SongRepository.cs' },
+  { id:'practice_repo', label:'PracticeRunRepository', shortLabel:'PracticeRunRepo', layer:'persistence', desc:'CRUD for PracticeRuns table.', methods:['AddRunAsync()','GetRunsForSongAsync()','DeleteRunsForSongAsync()'], path:'DrumHero/Persistence/PracticeRunRepository.cs' },
+  { id:'settings_repo', label:'SettingsRepository', shortLabel:'SettingsRepo', layer:'persistence', desc:'Key-value storage in Settings table. LoadSettingsAsync reads all keys into AppSettings. SaveSettingsAsync upserts.', methods:['LoadSettingsAsync()','SaveSettingsAsync()'], path:'DrumHero/Persistence/SettingsRepository.cs' },
+
+  // Models
+  { id:'song_model', label:'Song.cs', layer:'models', desc:'Song entity with Id, Title, Artist, OriginalFilePath, DurationSeconds, BPM, TimeSignature, Status, file path refs. Also defines SongStatus enum.', methods:['Id, Title, Artist','Status (SongStatus)','DrumlessTrackPath, DrumStemPath','HighwayDataPath'], path:'DrumHero/Models/Song.cs' },
+  { id:'practice_run', label:'PracticeRun.cs', layer:'models', desc:'Practice session record: SongId, Timestamp, AccuracyPercent, TotalNotes, HitNotes, MissedNotes, Difficulty, TempoPercent, BPM, Completed.', methods:['SongId, Timestamp','AccuracyPercent, TotalNotes','HitNotes, MissedNotes'], path:'DrumHero/Models/PracticeRun.cs' },
+  { id:'highway_note', label:'HighwayNote.cs', layer:'models', desc:'A note on the drum highway: Lane, TimeSeconds, Bar, BeatInBar, SubBeat, Velocity. Runtime state: HitState, HitTimeSeconds. Also defines NoteHitState enum.', methods:['Lane (DrumLane)','TimeSeconds, Velocity','HitState (NoteHitState)'], path:'DrumHero/Models/HighwayNote.cs' },
+  { id:'drum_lane', label:'DrumLane.cs', layer:'models', desc:'Enum mapping drum positions: LeftKick, RightKick, Snare, RackTom1, RackTom2, FloorTom, ClosedHiHat, OpenHiHat, Crash1–3, Ride.', methods:['LeftKick, RightKick','Snare, Toms','HiHat, Crashes, Ride'], path:'DrumHero/Models/DrumLane.cs' },
+  { id:'midi_map', label:'MidiDrumMap.cs', layer:'models', desc:'Static mapper: MIDI note → DrumLane. Alesis Nitro Max defaults. Forward map (_noteToLane) and reverse map (_laneToPrimaryNote).', methods:['GetLane(midiNote)','GetPrimaryNote(lane)'], path:'DrumHero/Models/MidiDrumMap.cs' },
+  { id:'difficulty', label:'DifficultyLevel.cs', layer:'models', desc:'Enum (Easy/Normal/Hard) + DifficultySettings static helper with hit window timings (±95ms/±65ms/±40ms).', methods:['Easy, Normal, Hard','GetHitWindow(level)'], path:'DrumHero/Models/DifficultyLevel.cs' },
+  { id:'app_settings', label:'AppSettings.cs', layer:'models', desc:'Settings model: AudioOutputDeviceId, MidiInputDeviceId, Difficulty, API config, buffer sizes, volumes, InputTimingOffsetMs.', methods:['AudioOutputDeviceId','MidiInputDeviceId','Difficulty, Volumes'], path:'DrumHero/Models/AppSettings.cs' },
+  { id:'transcription', label:'TranscriptionData.cs', shortLabel:'TranscriptionData', layer:'models', desc:'JSON deserialization models for drum transcription output. Root: BPM, TimeSignature, DurationSeconds, Notes list. Uses System.Text.Json.', methods:['BPM, TimeSignature','Notes (TranscriptionNote[])','MidiNote, Velocity, Bar, Beat'], path:'DrumHero/Models/TranscriptionData.cs' },
+
+  // Infrastructure
+  { id:'nav_service', label:'NavigationService', layer:'infrastructure', desc:'Manages view navigation via ViewModel-first pattern. Stores factory functions for each ViewModel, exposes CurrentViewModel (observable). NavigateToAsync creates VM and calls OnNavigatedToAsync.', methods:['NavigateToAsync<T>()','CurrentViewModel (property)','RegisterFactory<T>()'], path:'DrumHero/Infrastructure/NavigationService.cs' },
+  { id:'vm_base', label:'ViewModelBase', layer:'infrastructure', desc:'Abstract base for all ViewModels. Extends ObservableObject. Provides IsBusy, BusyMessage properties. Virtual navigation hooks.', methods:['IsBusy, BusyMessage','OnNavigatedToAsync()','OnNavigatedFromAsync()'], path:'DrumHero/Infrastructure/ViewModelBase.cs' },
+  { id:'relay_cmd', label:'RelayCommandAsync', layer:'infrastructure', desc:'Custom async ICommand implementations. Prevents double-execution with _isExecuting guard.', methods:['AsyncRelayCommand','AsyncRelayCommand<T>','Execute(), CanExecute()'], path:'DrumHero/Infrastructure/RelayCommandAsync.cs' },
+
+  // Converters
+  { id:'converters', label:'BoolToVisibilityConverter', shortLabel:'Converters', layer:'converters', desc:'Contains three WPF value converters: BoolToVisibilityConverter (bool→Visible/Collapsed), ZeroToVisibleConverter (int 0→Visible), IntToBoolConverter (int==param→true).', methods:['Convert()','ConvertBack()'], path:'DrumHero/Converters/BoolToVisibilityConverter.cs' },
+];
+
+// Edge types: 'ref' = direct reference, 'di' = DI injection, 'event' = event/callback
+const EDGES = [
+  // App.xaml.cs → everything (DI)
+  { from:'app_cs', to:'main_vm', type:'di' },
+  { from:'app_cs', to:'nav_service', type:'di' },
+  { from:'app_cs', to:'mainwindow_cs', type:'di' },
+  { from:'app_cs', to:'song_import', type:'di' },
+  { from:'app_cs', to:'song_library', type:'di' },
+  { from:'app_cs', to:'settings_svc', type:'di' },
+  { from:'app_cs', to:'practice_session', type:'di' },
+  { from:'app_cs', to:'audio_engine', type:'di' },
+  { from:'app_cs', to:'midi_engine', type:'di' },
+  { from:'app_cs', to:'hit_detection', type:'di' },
+  { from:'app_cs', to:'demucs_svc', type:'di' },
+  { from:'app_cs', to:'db_manager', type:'di' },
+  { from:'app_cs', to:'song_repo', type:'di' },
+  { from:'app_cs', to:'practice_repo', type:'di' },
+  { from:'app_cs', to:'settings_repo', type:'di' },
+  { from:'app_cs', to:'file_storage', type:'di' },
+
+  // App.xaml → converters
+  { from:'app_xaml', to:'converters', type:'ref' },
+
+  // MainWindow
+  { from:'mainwindow_cs', to:'main_vm', type:'ref' },
+  { from:'mainwindow_cs', to:'nav_service', type:'ref' },
+  { from:'mainwindow_xaml', to:'library_view', type:'ref' },
+  { from:'mainwindow_xaml', to:'practice_view', type:'ref' },
+  { from:'mainwindow_xaml', to:'settings_view', type:'ref' },
+  { from:'mainwindow_xaml', to:'analysis_view', type:'ref' },
+
+  // Views → ViewModels (binding)
+  { from:'library_view', to:'library_vm', type:'ref' },
+  { from:'practice_view', to:'practice_vm', type:'ref' },
+  { from:'settings_view', to:'settings_vm', type:'ref' },
+  { from:'analysis_view', to:'analysis_vm', type:'ref' },
+  { from:'practice_view', to:'highway_control', type:'ref' },
+
+  // MainViewModel
+  { from:'main_vm', to:'nav_service', type:'ref' },
+
+  // LibraryViewModel
+  { from:'library_vm', to:'song_library', type:'ref' },
+  { from:'library_vm', to:'song_import', type:'ref' },
+  { from:'library_vm', to:'nav_service', type:'ref' },
+  { from:'library_vm', to:'practice_vm', type:'ref' },
+  { from:'library_vm', to:'analysis_vm', type:'ref' },
+  { from:'library_vm', to:'song_model', type:'ref' },
+
+  // PracticeViewModel
+  { from:'practice_vm', to:'practice_session', type:'ref' },
+  { from:'practice_vm', to:'song_library', type:'ref' },
+  { from:'practice_vm', to:'settings_svc', type:'ref' },
+  { from:'practice_vm', to:'nav_service', type:'ref' },
+  { from:'practice_vm', to:'time_stretch', type:'ref' },
+  { from:'practice_vm', to:'highway_note', type:'ref' },
+  { from:'practice_vm', to:'practice_run', type:'ref' },
+  { from:'practice_vm', to:'song_model', type:'ref' },
+  { from:'practice_vm', to:'drum_lane', type:'ref' },
+  { from:'practice_vm', to:'difficulty', type:'ref' },
+
+  // SettingsViewModel
+  { from:'settings_vm', to:'settings_svc', type:'ref' },
+  { from:'settings_vm', to:'nav_service', type:'ref' },
+  { from:'settings_vm', to:'audio_engine', type:'ref' },
+  { from:'settings_vm', to:'midi_engine', type:'ref' },
+  { from:'settings_vm', to:'app_settings', type:'ref' },
+  { from:'settings_vm', to:'difficulty', type:'ref' },
+
+  // AnalysisProgressViewModel
+  { from:'analysis_vm', to:'song_import', type:'ref' },
+
+  // SongImportService
+  { from:'song_import', to:'i_analysis', type:'ref' },
+  { from:'song_import', to:'song_repo', type:'ref' },
+  { from:'song_import', to:'file_storage', type:'ref' },
+  { from:'song_import', to:'song_model', type:'ref' },
+  { from:'song_import', to:'transcription', type:'ref' },
+
+  // SongLibraryService
+  { from:'song_library', to:'song_repo', type:'ref' },
+  { from:'song_library', to:'practice_repo', type:'ref' },
+  { from:'song_library', to:'file_storage', type:'ref' },
+  { from:'song_library', to:'song_model', type:'ref' },
+  { from:'song_library', to:'practice_run', type:'ref' },
+
+  // SettingsService
+  { from:'settings_svc', to:'settings_repo', type:'ref' },
+  { from:'settings_svc', to:'app_settings', type:'ref' },
+
+  // PracticeSessionService (central orchestrator)
+  { from:'practice_session', to:'audio_engine', type:'ref' },
+  { from:'practice_session', to:'midi_engine', type:'ref' },
+  { from:'practice_session', to:'hit_detection', type:'ref' },
+  { from:'practice_session', to:'practice_repo', type:'ref' },
+  { from:'practice_session', to:'file_storage', type:'ref' },
+  { from:'practice_session', to:'song_repo', type:'ref' },
+  { from:'practice_session', to:'i_analysis', type:'ref' },
+  { from:'practice_session', to:'song_model', type:'ref' },
+  { from:'practice_session', to:'highway_note', type:'ref' },
+  { from:'practice_session', to:'midi_map', type:'ref' },
+  { from:'practice_session', to:'transcription', type:'ref' },
+  { from:'practice_session', to:'drum_lane', type:'ref' },
+  { from:'practice_session', to:'difficulty', type:'ref' },
+
+  // Audio internals
+  { from:'audio_engine', to:'metronome', type:'ref' },
+  { from:'hit_detection', to:'highway_note', type:'ref' },
+  { from:'hit_detection', to:'drum_lane', type:'ref' },
+  { from:'hit_detection', to:'difficulty', type:'ref' },
+  { from:'midi_map', to:'drum_lane', type:'ref' },
+
+  // Analysis
+  { from:'demucs_svc', to:'i_analysis', type:'ref' },
+  { from:'demucs_svc', to:'transcription', type:'ref' },
+  { from:'http_analysis', to:'i_analysis', type:'ref' },
+
+  // Persistence → Models
+  { from:'song_repo', to:'db_manager', type:'ref' },
+  { from:'song_repo', to:'song_model', type:'ref' },
+  { from:'practice_repo', to:'db_manager', type:'ref' },
+  { from:'practice_repo', to:'practice_run', type:'ref' },
+  { from:'settings_repo', to:'db_manager', type:'ref' },
+  { from:'settings_repo', to:'app_settings', type:'ref' },
+  { from:'settings_repo', to:'difficulty', type:'ref' },
+
+  // Infrastructure
+  { from:'nav_service', to:'vm_base', type:'ref' },
+
+  // ViewModels → ViewModelBase (inheritance)
+  { from:'main_vm', to:'vm_base', type:'ref' },
+  { from:'library_vm', to:'vm_base', type:'ref' },
+  { from:'practice_vm', to:'vm_base', type:'ref' },
+  { from:'settings_vm', to:'vm_base', type:'ref' },
+  { from:'analysis_vm', to:'vm_base', type:'ref' },
+
+  // Event connections
+  { from:'midi_engine', to:'hit_detection', type:'event' },
+  { from:'hit_detection', to:'practice_session', type:'event' },
+  { from:'practice_session', to:'practice_vm', type:'event' },
+  { from:'analysis_vm', to:'library_vm', type:'event' },
+  { from:'app_settings', to:'difficulty', type:'ref' },
+  { from:'highway_note', to:'drum_lane', type:'ref' },
+];
+
+const EXTERNAL_DEPS = [
+  { name: 'NAudio', icon: '🔊', desc: 'Audio playback & MIDI input' },
+  { name: 'SoundTouch.Net', icon: '⏩', desc: 'Time stretching' },
+  { name: 'TagLibSharp', icon: '🏷', desc: 'FLAC metadata' },
+  { name: 'Sqlite', icon: '🗄', desc: 'Microsoft.Data.Sqlite' },
+  { name: 'MVVM Toolkit', icon: '🔧', desc: 'CommunityToolkit.Mvvm' },
+  { name: 'MS DI', icon: '💉', desc: 'DependencyInjection' },
+  { name: 'System.Text.Json', icon: '📄', desc: 'JSON serialization' },
+  { name: 'Python/Demucs', icon: '🐍', desc: 'External process' },
+];
+
+// ─── LAYOUT ────────────────────────────────────────────
+const NODE_W = 180, NODE_H = 40, PAD_X = 40, PAD_Y = 24;
+
+// Row definitions: which layer, which node IDs, and the Y band
+const LAYOUT_ROWS = [
+  { layer: 'entry',          ids: ['app_cs','app_xaml','mainwindow_cs','mainwindow_xaml'] },
+  { layer: 'views',          ids: ['library_view','practice_view','settings_view','analysis_view','highway_control'] },
+  { layer: 'viewmodels',     ids: ['main_vm','library_vm','practice_vm','settings_vm','analysis_vm'] },
+  { layer: 'services',       ids: ['song_import','song_library','settings_svc','practice_session'] },
+  { layer: 'audio',          ids: ['audio_engine','midi_engine','hit_detection','metronome','time_stretch'] },
+  { layer: 'analysis',       ids: ['i_analysis','demucs_svc','http_analysis'] },
+  { layer: 'persistence',    ids: ['file_storage','db_manager','song_repo','practice_repo','settings_repo'] },
+  { layer: 'models',         ids: ['song_model','practice_run','highway_note','drum_lane','midi_map'] },
+  { layer: 'models2',        ids: ['difficulty','app_settings','transcription'], sublayer: true },
+  { layer: 'infrastructure', ids: ['nav_service','vm_base','relay_cmd'] },
+  { layer: 'converters',     ids: ['converters'] },
+];
+
+// Compute positions
+const nodeMap = {};
+NODES.forEach(n => nodeMap[n.id] = n);
+
+const ROW_GAP = NODE_H + PAD_Y + 48; // extra for label above
+const START_Y = 80;
+
+function layoutNodes() {
+  let currentY = START_Y;
+  LAYOUT_ROWS.forEach((row, ri) => {
+    const y = currentY;
+    const totalW = row.ids.length * NODE_W + (row.ids.length - 1) * PAD_X;
+    const startX = 80;
+    row.ids.forEach((id, ci) => {
+      const node = nodeMap[id];
+      if (node) {
+        node.x = startX + ci * (NODE_W + PAD_X);
+        node.y = y;
+      }
+    });
+    row.y = y;
+    row.totalW = totalW;
+    // Sublayer rows get less vertical gap (no label space needed)
+    currentY += row.sublayer ? (NODE_H + PAD_Y + 12) : ROW_GAP;
+  });
+}
+layoutNodes();
+
+// ─── RENDERING ─────────────────────────────────────────
+const svg = document.getElementById('diagram-svg');
+const root = document.getElementById('diagram-root');
+const edgesGroup = document.getElementById('edges-group');
+const nodesGroup = document.getElementById('nodes-group');
+const labelsGroup = document.getElementById('layer-labels-group');
+
+function createSVGEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+// Draw layer labels & backgrounds
+function drawLayerBands() {
+  LAYOUT_ROWS.forEach(row => {
+    const layer = LAYERS[row.layer];
+    // Background band
+    const bandRect = createSVGEl('rect', {
+      x: 20, y: row.y - 14,
+      width: Math.max(row.totalW + 160, 1800),
+      height: NODE_H + 28,
+      rx: 8,
+      fill: layer.color,
+      'fill-opacity': 0.04,
+      stroke: layer.color,
+      'stroke-opacity': 0.12,
+      'stroke-width': 1,
+    });
+    labelsGroup.appendChild(bandRect);
+
+    // Skip label for sublayers
+    if (row.sublayer) return;
+
+    // Layer label (horizontal, above the band)
+    const label = createSVGEl('text', {
+      x: 84, y: row.y - 18,
+      fill: layer.color,
+      'font-family': "'JetBrains Mono', monospace",
+      'font-size': '11',
+      'font-weight': '700',
+      'letter-spacing': '0.06em',
+      opacity: '0.8',
+      'text-anchor': 'start',
+    });
+    label.textContent = layer.label.toUpperCase();
+    labelsGroup.appendChild(label);
+  });
+}
+
+// Draw edges
+function drawEdges() {
+  EDGES.forEach((edge, idx) => {
+    const from = nodeMap[edge.from];
+    const to = nodeMap[edge.to];
+    if (!from || !to) return;
+
+    const x1 = from.x + NODE_W / 2;
+    const y1 = from.y + NODE_H;
+    const x2 = to.x + NODE_W / 2;
+    const y2 = to.y;
+
+    // Use a curved path
+    const midY = (y1 + y2) / 2;
+    const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+
+    let stroke, dasharray, marker;
+    switch (edge.type) {
+      case 'di':
+        stroke = 'var(--di-line)'; dasharray = '4 3'; marker = 'url(#arrow-di)'; break;
+      case 'event':
+        stroke = 'var(--event-line)'; dasharray = '6 3'; marker = 'url(#arrow-event)'; break;
+      default:
+        stroke = 'var(--ref-line)'; dasharray = 'none'; marker = 'url(#arrow-ref)';
+    }
+
+    const path = createSVGEl('path', {
+      d, fill: 'none', stroke, 'stroke-width': '1.2',
+      'stroke-dasharray': dasharray,
+      'marker-end': marker,
+      opacity: '0.25',
+      'data-from': edge.from,
+      'data-to': edge.to,
+      'data-type': edge.type,
+      class: 'edge-line',
+    });
+    edgesGroup.appendChild(path);
+    edge.el = path;
+  });
+}
+
+// Draw nodes
+function drawNodes() {
+  NODES.forEach(node => {
+    const layer = LAYERS[node.layer];
+    const g = createSVGEl('g', {
+      class: 'node-group',
+      'data-id': node.id,
+      transform: `translate(${node.x}, ${node.y})`,
+      cursor: 'pointer',
+    });
+
+    // Background rect
+    const rect = createSVGEl('rect', {
+      x: 0, y: 0, width: NODE_W, height: NODE_H,
+      rx: 8, fill: '#161822',
+      stroke: layer.color, 'stroke-width': '1.5',
+      'stroke-opacity': '0.6',
+    });
+    g.appendChild(rect);
+
+    // Glow rect (hidden by default)
+    const glow = createSVGEl('rect', {
+      x: -2, y: -2, width: NODE_W + 4, height: NODE_H + 4,
+      rx: 10, fill: 'none',
+      stroke: layer.color, 'stroke-width': '2',
+      opacity: '0',
+      class: 'node-glow',
+    });
+    g.appendChild(glow);
+
+    // Small color indicator
+    const indicator = createSVGEl('rect', {
+      x: 0, y: 0, width: 4, height: NODE_H,
+      rx: 2, fill: layer.color,
+    });
+    g.appendChild(indicator);
+
+    // Text label
+    const text = createSVGEl('text', {
+      x: NODE_W / 2 + 2, y: NODE_H / 2 + 4,
+      fill: '#e2e8f0',
+      'font-family': "'JetBrains Mono', monospace",
+      'font-size': '11',
+      'font-weight': '500',
+      'text-anchor': 'middle',
+    });
+    // Truncate if needed
+    const displayLabel = node.shortLabel || node.label;
+    const maxChars = 20;
+    text.textContent = displayLabel.length > maxChars ? displayLabel.substring(0, maxChars - 1) + '…' : displayLabel;
+    g.appendChild(text);
+
+    nodesGroup.appendChild(g);
+    node.el = g;
+    node.rectEl = rect;
+    node.glowEl = glow;
+  });
+}
+
+drawLayerBands();
+drawEdges();
+drawNodes();
+
+// ─── PAN & ZOOM ────────────────────────────────────────
+let transform = { x: 0, y: 0, scale: 1 };
+let isDragging = false, dragStart = { x: 0, y: 0 };
+
+function applyTransform() {
+  root.setAttribute('transform', `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`);
+  updateMinimap();
+}
+
+function fitToScreen() {
+  const wrap = document.getElementById('canvas-wrap');
+  const wW = wrap.clientWidth, wH = wrap.clientHeight;
+  // Find bounds
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  NODES.forEach(n => {
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + NODE_W);
+    maxY = Math.max(maxY, n.y + NODE_H);
+  });
+  const dW = maxX - minX + 120, dH = maxY - minY + 120;
+  const scale = Math.min(wW / dW, wH / dH, 1.5) * 0.9;
+  transform.scale = scale;
+  transform.x = (wW - dW * scale) / 2 - minX * scale + 60 * scale;
+  transform.y = (wH - dH * scale) / 2 - minY * scale + 60 * scale;
+  applyTransform();
+}
+
+svg.addEventListener('mousedown', e => {
+  if (e.target.closest('.node-group')) return;
+  isDragging = true;
+  dragStart = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+  svg.classList.add('dragging');
+});
+svg.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  transform.x = e.clientX - dragStart.x;
+  transform.y = e.clientY - dragStart.y;
+  applyTransform();
+});
+svg.addEventListener('mouseup', () => { isDragging = false; svg.classList.remove('dragging'); });
+svg.addEventListener('mouseleave', () => { isDragging = false; svg.classList.remove('dragging'); });
+
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 0.92 : 1.08;
+  const rect = svg.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const newScale = Math.max(0.15, Math.min(3, transform.scale * factor));
+  transform.x = mx - (mx - transform.x) * (newScale / transform.scale);
+  transform.y = my - (my - transform.y) * (newScale / transform.scale);
+  transform.scale = newScale;
+  applyTransform();
+}, { passive: false });
+
+document.getElementById('zoom-in').addEventListener('click', () => {
+  transform.scale = Math.min(3, transform.scale * 1.2);
+  applyTransform();
+});
+document.getElementById('zoom-out').addEventListener('click', () => {
+  transform.scale = Math.max(0.15, transform.scale / 1.2);
+  applyTransform();
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+  transform = { x: 0, y: 0, scale: 1 };
+  applyTransform();
+});
+document.getElementById('btn-fit').addEventListener('click', fitToScreen);
+
+// ─── MINIMAP ───────────────────────────────────────────
+const minimapCanvas = document.getElementById('minimap-canvas');
+const minimapCtx = minimapCanvas.getContext('2d');
+const minimapVP = document.getElementById('minimap-vp');
+
+function drawMinimapOnce() {
+  const c = minimapCtx;
+  c.clearRect(0, 0, 200, 140);
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  NODES.forEach(n => {
+    minX = Math.min(minX, n.x);
+    minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x + NODE_W);
+    maxY = Math.max(maxY, n.y + NODE_H);
+  });
+  const dW = maxX - minX + 80, dH = maxY - minY + 80;
+  const scale = Math.min(200 / dW, 140 / dH);
+  const ox = (200 - dW * scale) / 2, oy = (140 - dH * scale) / 2;
+
+  // Draw edges
+  c.globalAlpha = 0.15;
+  c.strokeStyle = '#60a5fa';
+  c.lineWidth = 0.5;
+  EDGES.forEach(edge => {
+    const from = nodeMap[edge.from], to = nodeMap[edge.to];
+    if (!from || !to) return;
+    c.beginPath();
+    c.moveTo(ox + (from.x + NODE_W/2 - minX + 40) * scale, oy + (from.y + NODE_H - minY + 40) * scale);
+    c.lineTo(ox + (to.x + NODE_W/2 - minX + 40) * scale, oy + (to.y - minY + 40) * scale);
+    c.stroke();
+  });
+
+  // Draw nodes
+  c.globalAlpha = 0.8;
+  NODES.forEach(n => {
+    const layer = LAYERS[n.layer];
+    c.fillStyle = layer.color;
+    c.fillRect(
+      ox + (n.x - minX + 40) * scale,
+      oy + (n.y - minY + 40) * scale,
+      NODE_W * scale,
+      NODE_H * scale
+    );
+  });
+  c.globalAlpha = 1;
+
+  // Store for viewport calc
+  minimapCanvas._meta = { minX, minY, dW, dH, scale, ox, oy };
+}
+
+function updateMinimap() {
+  if (!minimapCanvas._meta) return;
+  const { minX, minY, dW, dH, scale, ox, oy } = minimapCanvas._meta;
+  const wrap = document.getElementById('canvas-wrap');
+  const wW = wrap.clientWidth, wH = wrap.clientHeight;
+
+  // Visible area in diagram coords
+  const vx = (-transform.x) / transform.scale;
+  const vy = (-transform.y) / transform.scale;
+  const vw = wW / transform.scale;
+  const vh = wH / transform.scale;
+
+  // Map to minimap
+  const mx = ox + (vx - minX + 40) * scale;
+  const my = oy + (vy - minY + 40) * scale;
+  const mw = vw * scale;
+  const mh = vh * scale;
+
+  minimapVP.style.left = Math.max(0, mx) + 'px';
+  minimapVP.style.top = Math.max(0, my) + 'px';
+  minimapVP.style.width = Math.min(200, mw) + 'px';
+  minimapVP.style.height = Math.min(140, mh) + 'px';
+}
+
+// ─── INTERACTIONS ──────────────────────────────────────
+let selectedNode = null;
+const infoPanel = document.getElementById('info-panel');
+
+function getEdgesForNode(nodeId) {
+  const incoming = [], outgoing = [];
+  EDGES.forEach(e => {
+    if (e.to === nodeId) incoming.push(e);
+    if (e.from === nodeId) outgoing.push(e);
+  });
+  return { incoming, outgoing };
+}
+
+function highlightNode(nodeId) {
+  // Reset all
+  document.querySelectorAll('.node-group').forEach(g => {
+    g.querySelector('rect').setAttribute('fill-opacity', '1');
+    g.style.opacity = '0.3';
+  });
+  document.querySelectorAll('.edge-line').forEach(e => {
+    e.setAttribute('opacity', '0.05');
+  });
+
+  // Highlight selected + connected
+  const { incoming, outgoing } = getEdgesForNode(nodeId);
+  const connectedIds = new Set([nodeId]);
+  incoming.forEach(e => connectedIds.add(e.from));
+  outgoing.forEach(e => connectedIds.add(e.to));
+
+  connectedIds.forEach(id => {
+    const node = nodeMap[id];
+    if (node && node.el) node.el.style.opacity = '1';
+  });
+
+  // Highlight node glow
+  const mainNode = nodeMap[nodeId];
+  if (mainNode && mainNode.glowEl) {
+    mainNode.glowEl.setAttribute('opacity', '0.8');
+  }
+
+  // Highlight edges
+  [...incoming, ...outgoing].forEach(e => {
+    if (e.el) {
+      e.el.setAttribute('opacity', '0.7');
+      e.el.setAttribute('stroke-width', '2');
+    }
+  });
+}
+
+function clearHighlight() {
+  document.querySelectorAll('.node-group').forEach(g => {
+    g.style.opacity = '1';
+  });
+  document.querySelectorAll('.edge-line').forEach(e => {
+    e.setAttribute('opacity', '0.25');
+    e.setAttribute('stroke-width', '1.2');
+  });
+  NODES.forEach(n => {
+    if (n.glowEl) n.glowEl.setAttribute('opacity', '0');
+  });
+}
+
+function showInfoPanel(nodeId) {
+  const node = nodeMap[nodeId];
+  if (!node) return;
+  const layer = LAYERS[node.layer];
+  const { incoming, outgoing } = getEdgesForNode(nodeId);
+
+  document.getElementById('info-badge').textContent = layer.label;
+  document.getElementById('info-badge').style.background = layer.color + '22';
+  document.getElementById('info-badge').style.color = layer.color;
+  document.getElementById('info-filename').textContent = node.label;
+
+  let html = '';
+  html += `<div class="info-section"><div class="info-label">Path</div><div class="info-text" style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${node.path}</div></div>`;
+  html += `<div class="info-section"><div class="info-label">Description</div><div class="info-text">${node.desc}</div></div>`;
+
+  if (node.methods && node.methods.length) {
+    html += `<div class="info-section"><div class="info-label">Key Members</div><ul class="info-list">`;
+    node.methods.forEach(m => { html += `<li style="color:var(--text-secondary)">${m}</li>`; });
+    html += `</ul></div>`;
+  }
+
+  if (incoming.length) {
+    html += `<div class="info-section"><div class="info-label">Depended on by (${incoming.length})</div><ul class="info-list">`;
+    incoming.forEach(e => {
+      const n = nodeMap[e.from];
+      const typeLabel = e.type === 'di' ? ' [DI]' : e.type === 'event' ? ' [Event]' : '';
+      html += `<li class="dep-in">${n ? n.label : e.from}${typeLabel}</li>`;
+    });
+    html += `</ul></div>`;
+  }
+
+  if (outgoing.length) {
+    html += `<div class="info-section"><div class="info-label">Depends on (${outgoing.length})</div><ul class="info-list">`;
+    outgoing.forEach(e => {
+      const n = nodeMap[e.to];
+      const typeLabel = e.type === 'di' ? ' [DI]' : e.type === 'event' ? ' [Event]' : '';
+      html += `<li class="dep-out">${n ? n.label : e.to}${typeLabel}</li>`;
+    });
+    html += `</ul></div>`;
+  }
+
+  document.getElementById('info-body').innerHTML = html;
+  infoPanel.classList.add('visible');
+}
+
+// Click handler
+nodesGroup.addEventListener('click', e => {
+  const g = e.target.closest('.node-group');
+  if (!g) return;
+  const id = g.getAttribute('data-id');
+  if (selectedNode === id) {
+    selectedNode = null;
+    clearHighlight();
+    infoPanel.classList.remove('visible');
+  } else {
+    selectedNode = id;
+    highlightNode(id);
+    showInfoPanel(id);
+  }
+});
+
+// Hover handler
+nodesGroup.addEventListener('mouseover', e => {
+  const g = e.target.closest('.node-group');
+  if (!g || selectedNode) return;
+  const id = g.getAttribute('data-id');
+  highlightNode(id);
+  showInfoPanel(id);
+});
+
+nodesGroup.addEventListener('mouseout', e => {
+  const g = e.target.closest('.node-group');
+  if (!g || selectedNode) return;
+  clearHighlight();
+  infoPanel.classList.remove('visible');
+});
+
+// Click on background to deselect
+svg.addEventListener('click', e => {
+  if (e.target.closest('.node-group')) return;
+  selectedNode = null;
+  clearHighlight();
+  infoPanel.classList.remove('visible');
+});
+
+document.getElementById('info-close').addEventListener('click', () => {
+  selectedNode = null;
+  clearHighlight();
+  infoPanel.classList.remove('visible');
+});
+
+// ─── SIDEBAR ───────────────────────────────────────────
+const legendContainer = document.getElementById('legend-layers');
+Object.entries(LAYERS).forEach(([key, layer]) => {
+  if (layer.hidden) return;
+  // For models, count includes models2 sublayer nodes
+  const countLayers = key === 'models' ? ['models', 'models2'] : [key];
+  const count = NODES.filter(n => countLayers.includes(n.layer)).length;
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-dot" style="background:${layer.color}"></div><span class="legend-label">${layer.label}</span><span class="legend-count">${count}</span>`;
+  item.addEventListener('click', () => {
+    // Highlight all nodes in this layer
+    clearHighlight();
+    selectedNode = null;
+    infoPanel.classList.remove('visible');
+    const filterLayers = key === 'models' ? ['models', 'models2'] : [key];
+    const layerNodes = NODES.filter(n => filterLayers.includes(n.layer));
+    document.querySelectorAll('.node-group').forEach(g => g.style.opacity = '0.15');
+    document.querySelectorAll('.edge-line').forEach(e => e.setAttribute('opacity', '0.03'));
+    layerNodes.forEach(n => {
+      if (n.el) n.el.style.opacity = '1';
+      if (n.glowEl) n.glowEl.setAttribute('opacity', '0.5');
+    });
+  });
+  legendContainer.appendChild(item);
+});
+
+const extContainer = document.getElementById('ext-deps');
+EXTERNAL_DEPS.forEach(dep => {
+  const item = document.createElement('div');
+  item.className = 'ext-dep';
+  item.innerHTML = `<div class="ext-icon">${dep.icon}</div><div><div class="ext-name">${dep.name}</div><div style="font-size:10px;color:var(--text-muted)">${dep.desc}</div></div>`;
+  extContainer.appendChild(item);
+});
+
+// Search
+const searchInput = document.getElementById('search-input');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  if (!q) {
+    clearHighlight();
+    selectedNode = null;
+    infoPanel.classList.remove('visible');
+    return;
+  }
+  const matches = NODES.filter(n => n.label.toLowerCase().includes(q) || n.desc.toLowerCase().includes(q) || n.path.toLowerCase().includes(q));
+  document.querySelectorAll('.node-group').forEach(g => g.style.opacity = '0.15');
+  document.querySelectorAll('.edge-line').forEach(e => e.setAttribute('opacity', '0.03'));
+  matches.forEach(n => {
+    if (n.el) n.el.style.opacity = '1';
+    if (n.glowEl) n.glowEl.setAttribute('opacity', '0.5');
+  });
+  if (matches.length === 1) {
+    selectedNode = matches[0].id;
+    highlightNode(matches[0].id);
+    showInfoPanel(matches[0].id);
+  }
+});
+
+// Stats
+const visibleLayers = Object.values(LAYERS).filter(l => !l.hidden).length;
+document.getElementById('footer-stats').textContent = `${NODES.length} files · ${EDGES.length} connections · ${visibleLayers} layers`;
+
+// ─── INIT ──────────────────────────────────────────────
+drawMinimapOnce();
+fitToScreen();
+
+// Handle resize
+window.addEventListener('resize', () => {
+  drawMinimapOnce();
+  updateMinimap();
+});
+</script>
+</body>
+</html>
