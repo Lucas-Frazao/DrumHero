@@ -1,3 +1,4 @@
+using DrumHero.Models;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -19,9 +20,14 @@ public class AudioPlaybackEngine : IDisposable
     private VolumeSampleProvider? _drumStemVolume;
     private MetronomeProvider? _metronomeProvider;
     private VolumeSampleProvider? _metronomeVolume;
+    private DrumFeedbackProvider? _drumFeedback;
+    private VolumeSampleProvider? _drumFeedbackVolume;
     private double _tempoChangePercent; // Current SoundTouch tempo change value
     
     private bool _isPlaying;
+    private TimeSpan _pausedPosition; // Source-time position saved on pause
+    private float _savedBackingVolume;
+    private float _savedDrumStemVolume;
     private readonly object _lock = new();
     
     public bool IsPlaying => _isPlaying;
@@ -86,7 +92,35 @@ public class AudioPlaybackEngine : IDisposable
             ReadFully = true
         };
         
+        // Add the drum feedback provider to the mixer immediately so it's
+        // always ready to receive triggered sounds, even before a session loads.
+        _drumFeedback = new DrumFeedbackProvider();
+        _drumFeedbackVolume = new VolumeSampleProvider(_drumFeedback) { Volume = 0.8f };
+        _mixer.AddMixerInput(_drumFeedbackVolume);
+        
         _outputDevice.Init(_mixer);
+        
+        // Start the output device immediately so drum feedback sounds play
+        // even before the user presses Play on a song. The mixer's ReadFully = true
+        // ensures silence is output when no sources are producing audio.
+        _outputDevice.Play();
+    }
+    
+    /// <summary>
+    /// Triggers a drum feedback sound for the given lane and velocity.
+    /// Call from the MIDI input handler to provide audible hit feedback.
+    /// </summary>
+    public void TriggerDrumSound(DrumLane lane, int velocity)
+    {
+        _drumFeedback?.Trigger(lane, velocity);
+    }
+    
+    /// <summary>
+    /// Sets the volume of the drum feedback sounds (0.0 to 1.0).
+    /// </summary>
+    public void SetDrumFeedbackVolume(float volume)
+    {
+        if (_drumFeedbackVolume != null) _drumFeedbackVolume.Volume = volume;
     }
     
     /// <summary>
@@ -111,6 +145,7 @@ public class AudioPlaybackEngine : IDisposable
             {
                 Volume = backingVolume
             };
+            _savedBackingVolume = backingVolume;
             _mixer?.AddMixerInput(_backingVolume);
             
             // Load drum stem
@@ -121,6 +156,7 @@ public class AudioPlaybackEngine : IDisposable
             {
                 Volume = drumStemVolume
             };
+            _savedDrumStemVolume = drumStemVolume;
             _mixer?.AddMixerInput(_drumStemVolume);
         }
     }
@@ -168,30 +204,78 @@ public class AudioPlaybackEngine : IDisposable
     
     public void SetBackingVolume(float volume)
     {
-        if (_backingVolume != null) _backingVolume.Volume = volume;
+        _savedBackingVolume = volume;
+        if (_backingVolume != null && _isPlaying) _backingVolume.Volume = volume;
     }
     
     public void SetDrumStemVolume(float volume)
     {
-        if (_drumStemVolume != null) _drumStemVolume.Volume = volume;
+        _savedDrumStemVolume = volume;
+        if (_drumStemVolume != null && _isPlaying) _drumStemVolume.Volume = volume;
     }
     
     public void Play()
     {
-        _outputDevice?.Play();
-        _isPlaying = true;
+        lock (_lock)
+        {
+            // Ensure the device is running (it should already be from Initialize,
+            // but restart it in case it was stopped externally).
+            if (_outputDevice is WasapiOut wasapi && wasapi.PlaybackState != PlaybackState.Playing)
+            {
+                _outputDevice.Play();
+            }
+            
+            // Seek back to where we paused — the readers kept advancing silently
+            // while the WASAPI device was running with volumes at zero.
+            if (_pausedPosition > TimeSpan.Zero && _backingTrackReader != null)
+            {
+                _backingTrackReader.CurrentTime = _pausedPosition;
+                if (_drumStemReader != null)
+                    _drumStemReader.CurrentTime = _pausedPosition;
+                _pausedPosition = TimeSpan.Zero;
+            }
+            
+            // Restore volumes that were zeroed during pause
+            if (_backingVolume != null) _backingVolume.Volume = _savedBackingVolume;
+            if (_drumStemVolume != null) _drumStemVolume.Volume = _savedDrumStemVolume;
+            
+            _isPlaying = true;
+        }
     }
     
     public void Pause()
     {
-        _outputDevice?.Pause();
-        _isPlaying = false;
+        lock (_lock)
+        {
+            // Don't stop the WASAPI device — that would kill drum feedback audio.
+            // Save current position and mute the music sources. The output device keeps
+            // running so drum feedback sounds play even while paused.
+            _pausedPosition = _backingTrackReader?.CurrentTime ?? TimeSpan.Zero;
+            
+            // Save and zero the volumes
+            _savedBackingVolume = _backingVolume?.Volume ?? 0;
+            _savedDrumStemVolume = _drumStemVolume?.Volume ?? 0;
+            if (_backingVolume != null) _backingVolume.Volume = 0;
+            if (_drumStemVolume != null) _drumStemVolume.Volume = 0;
+            
+            _isPlaying = false;
+        }
     }
     
     public void Stop()
     {
-        _outputDevice?.Stop();
-        _isPlaying = false;
+        lock (_lock)
+        {
+            // Zero the volumes so the music stops immediately
+            if (_backingVolume != null) _backingVolume.Volume = 0;
+            if (_drumStemVolume != null) _drumStemVolume.Volume = 0;
+            
+            // Save current volumes for when Play() is called after a new LoadSession
+            _savedBackingVolume = 0;
+            _savedDrumStemVolume = 0;
+            
+            _isPlaying = false;
+        }
         Seek(TimeSpan.Zero);
     }
     
@@ -223,6 +307,12 @@ public class AudioPlaybackEngine : IDisposable
         _drumStemTimeStretch = null;
         _backingVolume = null;
         _drumStemVolume = null;
+        
+        // Re-add the drum feedback provider — it survives across session reloads
+        if (_drumFeedbackVolume != null && _mixer != null)
+        {
+            _mixer.AddMixerInput(_drumFeedbackVolume);
+        }
     }
     
     private static ISampleProvider EnsureStereo44100(ISampleProvider source)

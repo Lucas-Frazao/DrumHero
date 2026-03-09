@@ -184,6 +184,14 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     
+                    <!-- Drum feedback volume -->
+                    <TextBlock Text="🥁" Foreground="#808090" FontSize="13"
+                               VerticalAlignment="Center" Margin="15,0,4,0"/>
+                    <Slider Minimum="0" Maximum="1" Width="70" VerticalAlignment="Center"
+                            Value="{Binding DrumFeedbackVolume, Mode=TwoWay}"
+                            Foreground="#4ECDC4" Background="#2A2A4A"
+                            ToolTip="Drum Feedback Volume"/>
+                    
                     <!-- Metronome toggle -->
                     <Button Padding="10,6" Margin="10,0,0,0" Command="{Binding ToggleMetronomeCommand}"
                             Foreground="White" BorderThickness="0" FontFamily="Segoe UI" FontSize="12" Cursor="Hand">

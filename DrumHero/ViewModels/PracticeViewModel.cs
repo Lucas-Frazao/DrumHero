@@ -54,6 +54,7 @@ public partial class PracticeViewModel : ViewModelBase
     [ObservableProperty] private double _backingVolume = 0.8;
     [ObservableProperty] private double _drumStemVolume = 0.0;
     [ObservableProperty] private double _metronomeVolume = 0.5;
+    [ObservableProperty] private double _drumFeedbackVolume = 0.8;
 
     // Highway notes (for the renderer)
     public List<HighwayNote> HighwayNotes => _sessionService.HighwayNotes;
@@ -118,6 +119,7 @@ public partial class PracticeViewModel : ViewModelBase
         BackingVolume = settings.BackingTrackVolume;
         DrumStemVolume = settings.DrumStemVolume;
         MetronomeVolume = settings.MetronomeVolume;
+        DrumFeedbackVolume = settings.DrumFeedbackVolume;
         _sessionService.SetInputTimingOffsetMs(settings.InputTimingOffsetMs);
 
         await LoadSessionAsync();
@@ -302,12 +304,17 @@ public partial class PracticeViewModel : ViewModelBase
 
     partial void OnBackingVolumeChanged(double value)
     {
-        // Will be connected to audio engine in practice session
+        _sessionService.SetBackingVolume((float)value);
     }
 
     partial void OnDrumStemVolumeChanged(double value)
     {
-        // Will be connected to audio engine in practice session
+        _sessionService.SetDrumStemVolume((float)value);
+    }
+
+    partial void OnDrumFeedbackVolumeChanged(double value)
+    {
+        _sessionService.SetDrumFeedbackVolume((float)value);
     }
 
     private static string FormatTime(double seconds)

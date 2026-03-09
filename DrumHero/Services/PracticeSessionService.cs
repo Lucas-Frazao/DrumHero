@@ -255,10 +255,15 @@ public class PracticeSessionService : IDisposable
 
     private void OnMidiNoteOn(int midiNote, int velocity, double timestampMs)
     {
-        if (!_isActive) return;
-
         var lane = MidiDrumMap.GetLane(midiNote);
         if (lane == null) return;
+
+        // Always trigger audible feedback regardless of play state —
+        // the kit should feel like a real instrument at all times.
+        _audioEngine.TriggerDrumSound(lane.Value, velocity);
+
+        // Only process hit detection if actively playing
+        if (!_isActive) return;
 
         var currentTime = CurrentTimeSeconds;
         var adjustedTime = Math.Max(0, currentTime - _inputTimingOffsetSeconds);
@@ -293,6 +298,21 @@ public class PracticeSessionService : IDisposable
 
         await _runRepo.AddRunAsync(run);
         return run;
+    }
+
+    public void SetBackingVolume(float volume)
+    {
+        _audioEngine.SetBackingVolume(volume);
+    }
+
+    public void SetDrumStemVolume(float volume)
+    {
+        _audioEngine.SetDrumStemVolume(volume);
+    }
+
+    public void SetDrumFeedbackVolume(float volume)
+    {
+        _audioEngine.SetDrumFeedbackVolume(volume);
     }
 
     public void SetMetronome(bool enabled, double bpm, int beatsPerBar, float volume)
