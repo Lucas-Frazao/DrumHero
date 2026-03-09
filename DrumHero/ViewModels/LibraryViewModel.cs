@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using DrumHero.Infrastructure;
 using DrumHero.Models;
 using DrumHero.Services;
-using Microsoft.Win32;
+using DrumHero.Views;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -59,38 +59,26 @@ public partial class LibraryViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddSongAsync()
     {
-        // Step 1: Pick the FLAC audio file
-        var flacDialog = new OpenFileDialog
+        // Show the import dialog with clear FLAC / MIDI panels
+        var importDialog = new ImportSongDialog
         {
-            Title = "Step 1/2: Select a FLAC audio file",
-            Filter = "FLAC files (*.flac)|*.flac",
-            CheckFileExists = true
+            Owner = Application.Current.MainWindow
         };
 
-        if (flacDialog.ShowDialog() != true) return;
+        if (importDialog.ShowDialog() != true) return;
 
-        var flacPath = flacDialog.FileName;
+        var flacPath = importDialog.FlacFilePath!;
+        var midiPath = importDialog.MidiFilePath!;
+
+        // Validate both files
         var (isFlacValid, flacError) = _importService.ValidateFlacFile(flacPath);
-
         if (!isFlacValid)
         {
             MessageBox.Show(flacError!, "Invalid FLAC File", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        // Step 2: Pick the MIDI drum file (from Songsterr)
-        var midiDialog = new OpenFileDialog
-        {
-            Title = "Step 2/2: Select the drum MIDI file (from Songsterr)",
-            Filter = "MIDI files (*.mid;*.midi)|*.mid;*.midi",
-            CheckFileExists = true
-        };
-
-        if (midiDialog.ShowDialog() != true) return;
-
-        var midiPath = midiDialog.FileName;
         var (isMidiValid, midiError) = _importService.ValidateMidiFile(midiPath);
-
         if (!isMidiValid)
         {
             MessageBox.Show(midiError!, "Invalid MIDI File", MessageBoxButton.OK, MessageBoxImage.Warning);

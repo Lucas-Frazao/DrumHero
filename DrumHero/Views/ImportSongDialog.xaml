@@ -1,0 +1,155 @@
+<Window x:Class="DrumHero.Views.ImportSongDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Import Song"
+        Width="620" Height="480"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#1A1A2E"
+        FontFamily="Segoe UI">
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="Import Song" Foreground="White" FontSize="24" FontWeight="Bold"/>
+            <TextBlock Text="Select a FLAC audio file and a drum MIDI file from Songsterr"
+                       Foreground="#808090" FontSize="13" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Two file panels side by side -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- FLAC Panel -->
+            <Border x:Name="FlacPanel" Grid.Column="0"
+                    Background="#16213E" CornerRadius="10"
+                    BorderBrush="#2A3A5E" BorderThickness="2"
+                    Cursor="Hand" AllowDrop="True"
+                    MouseLeftButtonUp="FlacPanel_Click"
+                    DragEnter="FlacPanel_DragEnter"
+                    DragLeave="FlacPanel_DragLeave"
+                    Drop="FlacPanel_Drop">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                    <!-- Step badge -->
+                    <Border Background="#0F3460" CornerRadius="12" HorizontalAlignment="Center"
+                            Padding="12,4" Margin="0,0,0,12">
+                        <TextBlock Text="STEP 1" Foreground="#4ECDC4" FontSize="11"
+                                   FontWeight="Bold" HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Icon -->
+                    <TextBlock x:Name="FlacIcon" Text="🎵" FontSize="40"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+                    <!-- Label -->
+                    <TextBlock Text="Backing Track" Foreground="White" FontSize="16"
+                               FontWeight="SemiBold" HorizontalAlignment="Center"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text=".FLAC audio file" Foreground="#4ECDC4" FontSize="12"
+                               HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                    <!-- Instruction / file name -->
+                    <TextBlock x:Name="FlacStatusText"
+                               Text="Click to browse or drag &amp; drop"
+                               Foreground="#606080" FontSize="11"
+                               HorizontalAlignment="Center" TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- MIDI Panel -->
+            <Border x:Name="MidiPanel" Grid.Column="2"
+                    Background="#16213E" CornerRadius="10"
+                    BorderBrush="#2A3A5E" BorderThickness="2"
+                    Cursor="Hand" AllowDrop="True"
+                    MouseLeftButtonUp="MidiPanel_Click"
+                    DragEnter="MidiPanel_DragEnter"
+                    DragLeave="MidiPanel_DragLeave"
+                    Drop="MidiPanel_Drop">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                    <!-- Step badge -->
+                    <Border Background="#0F3460" CornerRadius="12" HorizontalAlignment="Center"
+                            Padding="12,4" Margin="0,0,0,12">
+                        <TextBlock Text="STEP 2" Foreground="#FF6B35" FontSize="11"
+                                   FontWeight="Bold" HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Icon -->
+                    <TextBlock x:Name="MidiIcon" Text="🥁" FontSize="40"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+                    <!-- Label -->
+                    <TextBlock Text="Drum MIDI" Foreground="White" FontSize="16"
+                               FontWeight="SemiBold" HorizontalAlignment="Center"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text=".MID file from Songsterr" Foreground="#FF6B35" FontSize="12"
+                               HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                    <!-- Instruction / file name -->
+                    <TextBlock x:Name="MidiStatusText"
+                               Text="Click to browse or drag &amp; drop"
+                               Foreground="#606080" FontSize="11"
+                               HorizontalAlignment="Center" TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Bottom buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button x:Name="CancelButton" Content="Cancel" Padding="24,10"
+                    Margin="0,0,10,0" Click="CancelButton_Click"
+                    Background="#2A2A4A" Foreground="White" BorderThickness="0"
+                    Cursor="Hand" FontSize="14">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#3A3A5A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button x:Name="ImportButton" Content="Import Song" Padding="24,10"
+                    IsEnabled="False" Click="ImportButton_Click"
+                    Background="#0F3460" Foreground="White" BorderThickness="0"
+                    Cursor="Hand" FontSize="14" FontWeight="SemiBold">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}"
+                                Opacity="{TemplateBinding Opacity}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1A4A8A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>
