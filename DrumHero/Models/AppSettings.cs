@@ -14,6 +14,6 @@ public class AppSettings
     public double MetronomeVolume { get; set; } = 0.5;
     public double DrumStemVolume { get; set; } = 0.0; // muted by default per spec
     public double BackingTrackVolume { get; set; } = 0.8;
-    public double DrumFeedbackVolume { get; set; } = 0.8; // audible kit feedback volume
+    public double DrumFeedbackVolume { get; set; } = 1.0; // audible kit feedback volume
     public int InputTimingOffsetMs { get; set; } = 45;
 }

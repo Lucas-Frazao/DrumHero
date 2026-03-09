@@ -54,7 +54,7 @@ public partial class PracticeViewModel : ViewModelBase
     [ObservableProperty] private double _backingVolume = 0.8;
     [ObservableProperty] private double _drumStemVolume = 0.0;
     [ObservableProperty] private double _metronomeVolume = 0.5;
-    [ObservableProperty] private double _drumFeedbackVolume = 0.8;
+    [ObservableProperty] private double _drumFeedbackVolume = 1.0;
 
     // MIDI debug display
     [ObservableProperty] private string _lastMidiDebug = string.Empty;

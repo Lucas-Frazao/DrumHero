@@ -36,9 +36,9 @@ public static class DrumSoundGenerator
             { DrumLane.RackTom1, GenerateTom(170, 0.22) },   // 13" rack tom — high, tight
             { DrumLane.RackTom2, GenerateTom(120, 0.26) },   // 15" rack tom — mid, gated
             { DrumLane.FloorTom, GenerateTom(75, 0.32) },    // 18-20" floor tom — deep, boomy
-            { DrumLane.Crash1, GenerateCrash(0.65, 4800) },   // Crash 1 — bright
-            { DrumLane.Crash2, GenerateCrash(0.60, 4400) },   // Crash 2 — slightly darker
-            { DrumLane.Crash3, GenerateCrash(0.50, 5200) },   // Crash 3 / China — cutting
+            { DrumLane.Crash1, GenerateCrash(1.0, 4800) },    // Crash 1 — bright, splashy
+            { DrumLane.Crash2, GenerateCrash(0.90, 4400) },    // Crash 2 — slightly darker
+            { DrumLane.Crash3, GenerateCrash(0.80, 5200) },    // Crash 3 / China — cutting
             { DrumLane.Ride, GenerateRide() },
         };
     }
@@ -92,7 +92,7 @@ public static class DrumSoundGenerator
             // Hard clip for that aggressive, mechanical feel
             sample = Math.Tanh(sample * 1.5);
 
-            float s = (float)(sample * 0.90);
+            float s = (float)(sample * 1.0);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -142,7 +142,7 @@ public static class DrumSoundGenerator
             double sample = tone + wires + crack;
             sample = Math.Tanh(sample * 1.3);
 
-            float s = (float)(sample * 0.85);
+            float s = (float)(sample * 1.0);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -178,7 +178,7 @@ public static class DrumSoundGenerator
 
             double sample = noise * env * 0.5 + ring1 + ring2 + stick;
 
-            float s = (float)(sample * 0.70);
+            float s = (float)(sample * 0.85);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -210,7 +210,7 @@ public static class DrumSoundGenerator
 
             double sample = (noise * 0.40 + ring1 + ring2 + ring3) * env;
 
-            float s = (float)(sample * 0.65);
+            float s = (float)(sample * 0.80);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -259,7 +259,7 @@ public static class DrumSoundGenerator
 
             double sample = Math.Tanh((tone * env * 0.75 + attack + skinNoise) * 1.2);
 
-            float s = (float)(sample * 0.82);
+            float s = (float)(sample * 0.95);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -268,9 +268,9 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// AJFA Crash cymbal: bright, aggressive, cutting attack.
-    /// Sustain is present but drier than typical — the mix is so treble-forward
-    /// that cymbals are prominent but not washy.
+    /// AJFA Crash cymbal: bright, aggressive, cutting attack with splashy sustain.
+    /// More wash and shimmer than a dry crash — the initial burst explodes and the
+    /// cymbal sustains with layered metallic overtones and noise wash.
     /// </summary>
     /// <param name="duration">Sustain length in seconds</param>
     /// <param name="baseRing">Base frequency for metallic ring partials</param>
@@ -286,23 +286,29 @@ public static class DrumSoundGenerator
 
             // Initial explosive hit — loud, bright burst
             double noise = rng.NextDouble() * 2 - 1;
-            double burstEnv = Math.Exp(-t * 25) * 0.40;
+            double burstEnv = Math.Exp(-t * 18) * 0.50;
 
-            // Sustain noise — controlled wash
-            double washEnv = Math.Exp(-t * 3.0);
+            // Splashy sustain wash — slower decay for that open, washy sustain
+            double washEnv = Math.Exp(-t * 1.8);
 
-            // Bright, aggressive metallic partials — pushed high
-            double ring1 = Math.Sin(2 * Math.PI * baseRing * t) * 0.12;
-            double ring2 = Math.Sin(2 * Math.PI * (baseRing * 1.37) * t) * 0.09;
-            double ring3 = Math.Sin(2 * Math.PI * (baseRing * 1.82) * t) * 0.06;
-            double ring4 = Math.Sin(2 * Math.PI * (baseRing * 2.41) * t) * 0.03;
-            double ringEnv = Math.Exp(-t * 2.8);
+            // Bright, aggressive metallic partials — more layers for shimmer
+            double ring1 = Math.Sin(2 * Math.PI * baseRing * t) * 0.14;
+            double ring2 = Math.Sin(2 * Math.PI * (baseRing * 1.31) * t) * 0.11;
+            double ring3 = Math.Sin(2 * Math.PI * (baseRing * 1.73) * t) * 0.08;
+            double ring4 = Math.Sin(2 * Math.PI * (baseRing * 2.19) * t) * 0.06;
+            double ring5 = Math.Sin(2 * Math.PI * (baseRing * 2.87) * t) * 0.04;
+            double ring6 = Math.Sin(2 * Math.PI * (baseRing * 3.51) * t) * 0.025;
+            double ringEnv = Math.Exp(-t * 2.0);
+
+            // High-frequency sizzle that sustains — the "splash" character
+            double sizzle = (rng.NextDouble() * 2 - 1) * 0.12 * Math.Exp(-t * 2.5);
 
             double sample = noise * burstEnv
-                          + noise * washEnv * 0.30
-                          + (ring1 + ring2 + ring3 + ring4) * ringEnv;
+                          + noise * washEnv * 0.38
+                          + (ring1 + ring2 + ring3 + ring4 + ring5 + ring6) * ringEnv
+                          + sizzle;
 
-            float s = (float)(sample * 0.62);
+            float s = (float)(sample * 0.78);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -339,7 +345,7 @@ public static class DrumSoundGenerator
 
             double sample = bell + ping + noise + shimmer;
 
-            float s = (float)(sample * 0.65);
+            float s = (float)(sample * 0.80);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }

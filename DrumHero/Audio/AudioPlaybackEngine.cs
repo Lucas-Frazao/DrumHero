@@ -95,7 +95,7 @@ public class AudioPlaybackEngine : IDisposable
         // Add the drum feedback provider to the mixer immediately so it's
         // always ready to receive triggered sounds, even before a session loads.
         _drumFeedback = new DrumFeedbackProvider();
-        _drumFeedbackVolume = new VolumeSampleProvider(_drumFeedback) { Volume = 0.8f };
+        _drumFeedbackVolume = new VolumeSampleProvider(_drumFeedback) { Volume = 1.0f };
         _mixer.AddMixerInput(_drumFeedbackVolume);
         
         _outputDevice.Init(_mixer);
