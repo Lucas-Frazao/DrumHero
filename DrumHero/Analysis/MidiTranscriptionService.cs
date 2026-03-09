@@ -16,6 +16,18 @@ namespace DrumHero.Analysis;
 public class MidiTranscriptionService
 {
     /// <summary>
+    /// Maximum number of drum notes that can appear at the same time on the highway.
+    /// When a MIDI file has more simultaneous notes, the lowest-priority ones are dropped.
+    /// </summary>
+    private const int MaxSimultaneousNotes = 3;
+
+    /// <summary>
+    /// Two notes are considered "simultaneous" if they are within this time window.
+    /// Accounts for slight MIDI quantization differences.
+    /// </summary>
+    private const double SimultaneousThresholdSeconds = 0.005; // 5ms
+
+    /// <summary>
     /// Parses a MIDI file and writes the transcription JSON to the specified output path.
     /// </summary>
     /// <param name="midiFilePath">Path to the .mid file (e.g. downloaded from Songsterr)</param>
@@ -123,6 +135,11 @@ public class MidiTranscriptionService
 
         // Sort by time
         notes.Sort((a, b) => a.TimeSeconds.CompareTo(b.TimeSeconds));
+
+        // Limit simultaneous notes to MaxSimultaneousNotes (3).
+        // When more than 3 notes land at the same time, keep the highest-priority
+        // drums based on a fixed hierarchy: kick > snare > hi-hat > toms > cymbals > ride.
+        notes = LimitSimultaneousNotes(notes, MaxSimultaneousNotes);
 
         // Build transcription data
         double midiDuration = notes.Count > 0 ? notes[^1].TimeSeconds + 1.0 : 0;
@@ -260,6 +277,86 @@ public class MidiTranscriptionService
         }
 
         return (4, 4); // Default
+    }
+
+    #endregion
+
+    #region Simultaneous Note Limiting
+
+    /// <summary>
+    /// Priority order for drum types when limiting simultaneous notes.
+    /// Lower value = higher priority = more likely to be kept.
+    /// Hierarchy: Kick > Snare > Hi-Hat > Toms > Cymbals > Ride
+    /// </summary>
+    private static int GetDrumPriority(int midiNote)
+    {
+        var lane = MidiDrumMap.GetLane(midiNote);
+        return lane switch
+        {
+            DrumLane.LeftKick or DrumLane.RightKick => 0,   // Kick is the backbone
+            DrumLane.Snare => 1,                             // Snare is the backbeat
+            DrumLane.ClosedHiHat or DrumLane.OpenHiHat => 2, // Hi-hat drives the groove
+            DrumLane.FloorTom => 3,                          // Floor tom (fills, accents)
+            DrumLane.RackTom1 => 4,                          // Rack tom 1
+            DrumLane.RackTom2 => 5,                          // Rack tom 2
+            DrumLane.Crash1 => 6,                            // Crash 1 (accent cymbal)
+            DrumLane.Crash2 => 7,                            // Crash 2
+            DrumLane.Crash3 => 8,                            // Crash 3
+            DrumLane.Ride => 9,                              // Ride (often doubles with hi-hat)
+            _ => 10
+        };
+    }
+
+    /// <summary>
+    /// Filters a sorted list of transcription notes so that no more than <paramref name="maxNotes"/>
+    /// appear at the same time. Notes within <see cref="SimultaneousThresholdSeconds"/> of each other
+    /// are considered simultaneous. The highest-priority notes (by drum type) are kept.
+    /// </summary>
+    private static List<TranscriptionNote> LimitSimultaneousNotes(
+        List<TranscriptionNote> sortedNotes, int maxNotes)
+    {
+        if (sortedNotes.Count == 0) return sortedNotes;
+
+        var result = new List<TranscriptionNote>(sortedNotes.Count);
+        var group = new List<TranscriptionNote> { sortedNotes[0] };
+
+        for (int i = 1; i < sortedNotes.Count; i++)
+        {
+            // Check if this note is simultaneous with the current group
+            if (sortedNotes[i].TimeSeconds - group[0].TimeSeconds <= SimultaneousThresholdSeconds)
+            {
+                group.Add(sortedNotes[i]);
+            }
+            else
+            {
+                // Flush the previous group
+                FlushGroup(group, maxNotes, result);
+                group.Clear();
+                group.Add(sortedNotes[i]);
+            }
+        }
+
+        // Flush the last group
+        FlushGroup(group, maxNotes, result);
+
+        return result;
+    }
+
+    private static void FlushGroup(
+        List<TranscriptionNote> group, int maxNotes, List<TranscriptionNote> output)
+    {
+        if (group.Count <= maxNotes)
+        {
+            output.AddRange(group);
+        }
+        else
+        {
+            // Sort by priority (lowest = highest priority), take the top N
+            var prioritized = group
+                .OrderBy(n => GetDrumPriority(n.MidiNote))
+                .Take(maxNotes);
+            output.AddRange(prioritized);
+        }
     }
 
     #endregion
