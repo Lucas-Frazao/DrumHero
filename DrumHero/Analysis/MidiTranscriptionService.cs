@@ -37,7 +37,7 @@ public class MidiTranscriptionService
             Message = "Parsing drum MIDI file..."
         });
 
-        var midiFile = new MidiFile(midiFilePath, strictMode: false);
+        var midiFile = new MidiFile(midiFilePath, strictChecking: false);
 
         // Build tempo map from all tracks (tempo events can be on any track, typically track 0)
         var tempoMap = BuildTempoMap(midiFile);
