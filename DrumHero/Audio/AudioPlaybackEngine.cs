@@ -13,17 +13,50 @@ public class AudioPlaybackEngine : IDisposable
     private MixingSampleProvider? _mixer;
     private AudioFileReader? _backingTrackReader;
     private AudioFileReader? _drumStemReader;
+    private TimeStretchProvider? _backingTimeStretch;
+    private TimeStretchProvider? _drumStemTimeStretch;
     private VolumeSampleProvider? _backingVolume;
     private VolumeSampleProvider? _drumStemVolume;
     private MetronomeProvider? _metronomeProvider;
     private VolumeSampleProvider? _metronomeVolume;
+    private double _tempoChangePercent; // Current SoundTouch tempo change value
     
     private bool _isPlaying;
     private readonly object _lock = new();
     
     public bool IsPlaying => _isPlaying;
-    public TimeSpan CurrentPosition => _backingTrackReader?.CurrentTime ?? TimeSpan.Zero;
-    public TimeSpan TotalDuration => _backingTrackReader?.TotalTime ?? TimeSpan.Zero;
+    /// <summary>
+    /// Returns the current playback position in "heard" (wall-clock) time.
+    /// When time-stretching, the underlying reader advances in source-sample time.
+    /// At half speed (-50% tempo change), 4s of source audio takes 8s of wall time.
+    /// Highway note times are scaled to wall-clock time, so we must convert:
+    ///   heardTime = sourceTime / speedFactor
+    /// where speedFactor = (100 + tempoChangePercent) / 100.
+    /// </summary>
+    public TimeSpan CurrentPosition
+    {
+        get
+        {
+            var raw = _backingTrackReader?.CurrentTime ?? TimeSpan.Zero;
+            var speedFactor = (100.0 + _tempoChangePercent) / 100.0;
+            if (speedFactor <= 0) speedFactor = 1.0; // safety
+            return TimeSpan.FromTicks((long)(raw.Ticks / speedFactor));
+        }
+    }
+    
+    /// <summary>
+    /// Total duration in "heard" (wall-clock) time at the current tempo.
+    /// </summary>
+    public TimeSpan TotalDuration
+    {
+        get
+        {
+            var raw = _backingTrackReader?.TotalTime ?? TimeSpan.Zero;
+            var speedFactor = (100.0 + _tempoChangePercent) / 100.0;
+            if (speedFactor <= 0) speedFactor = 1.0;
+            return TimeSpan.FromTicks((long)(raw.Ticks / speedFactor));
+        }
+    }
     
     /// <summary>
     /// Initializes audio output device. Pass null for default WASAPI device.
@@ -59,17 +92,22 @@ public class AudioPlaybackEngine : IDisposable
     /// <summary>
     /// Loads audio files for a practice session.
     /// </summary>
+    /// <param name="tempoChangePercent">SoundTouch tempo change: 0 = normal, -50 = half speed, +100 = double speed.</param>
     public void LoadSession(string backingTrackPath, string drumStemPath,
-        float backingVolume = 0.8f, float drumStemVolume = 0.0f)
+        float backingVolume = 0.8f, float drumStemVolume = 0.0f,
+        double tempoChangePercent = 0)
     {
         lock (_lock)
         {
             // Clean up previous
             ClearMixerInputs();
+            _tempoChangePercent = tempoChangePercent;
             
             // Load backing track
             _backingTrackReader = new AudioFileReader(backingTrackPath);
-            _backingVolume = new VolumeSampleProvider(EnsureStereo44100(_backingTrackReader))
+            ISampleProvider backingChain = EnsureStereo44100(_backingTrackReader);
+            _backingTimeStretch = new TimeStretchProvider(backingChain, tempoChangePercent);
+            _backingVolume = new VolumeSampleProvider(_backingTimeStretch)
             {
                 Volume = backingVolume
             };
@@ -77,11 +115,27 @@ public class AudioPlaybackEngine : IDisposable
             
             // Load drum stem
             _drumStemReader = new AudioFileReader(drumStemPath);
-            _drumStemVolume = new VolumeSampleProvider(EnsureStereo44100(_drumStemReader))
+            ISampleProvider drumChain = EnsureStereo44100(_drumStemReader);
+            _drumStemTimeStretch = new TimeStretchProvider(drumChain, tempoChangePercent);
+            _drumStemVolume = new VolumeSampleProvider(_drumStemTimeStretch)
             {
                 Volume = drumStemVolume
             };
             _mixer?.AddMixerInput(_drumStemVolume);
+        }
+    }
+    
+    /// <summary>
+    /// Updates the playback tempo at runtime without reloading the audio.
+    /// </summary>
+    /// <param name="tempoChangePercent">SoundTouch tempo change: 0 = normal, -50 = half speed, +100 = double speed.</param>
+    public void SetTempoChange(double tempoChangePercent)
+    {
+        lock (_lock)
+        {
+            _tempoChangePercent = tempoChangePercent;
+            _backingTimeStretch?.SetTempoChange(tempoChangePercent);
+            _drumStemTimeStretch?.SetTempoChange(tempoChangePercent);
         }
     }
     
@@ -145,10 +199,15 @@ public class AudioPlaybackEngine : IDisposable
     {
         lock (_lock)
         {
+            // position is in wall-clock (heard) time; convert to source time
+            var speedFactor = (100.0 + _tempoChangePercent) / 100.0;
+            if (speedFactor <= 0) speedFactor = 1.0;
+            var sourcePosition = TimeSpan.FromTicks((long)(position.Ticks * speedFactor));
+            
             if (_backingTrackReader != null)
-                _backingTrackReader.CurrentTime = position;
+                _backingTrackReader.CurrentTime = sourcePosition;
             if (_drumStemReader != null)
-                _drumStemReader.CurrentTime = position;
+                _drumStemReader.CurrentTime = sourcePosition;
             _metronomeProvider?.Reset(position.TotalSeconds);
         }
     }
@@ -160,6 +219,8 @@ public class AudioPlaybackEngine : IDisposable
         _drumStemReader?.Dispose();
         _backingTrackReader = null;
         _drumStemReader = null;
+        _backingTimeStretch = null;
+        _drumStemTimeStretch = null;
         _backingVolume = null;
         _drumStemVolume = null;
     }

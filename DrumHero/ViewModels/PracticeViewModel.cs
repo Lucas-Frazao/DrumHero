@@ -204,8 +204,12 @@ public partial class PracticeViewModel : ViewModelBase
         SpeedPercent = speedPercent;
         CurrentBpm = SongBpm * (speedPercent / 100.0);
 
-        // Reload session with new tempo
+        // Reload session with new tempo (includes audio time-stretch)
         await LoadSessionAsync();
+        
+        // Update displayed duration to match time-stretched playback
+        TotalDurationSeconds = _sessionService.TotalDurationSeconds;
+        TotalTimeDisplay = FormatTime(TotalDurationSeconds);
     }
 
     [RelayCommand]

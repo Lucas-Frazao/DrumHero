@@ -130,10 +130,12 @@ public class PracticeSessionService : IDisposable
             _audioEngine.Initialize(latencyMs: 50);
         }
 
-        // Load audio
+        // Load audio with time-stretch
         var backingPath = _fileStorage.ResolveAssetPath(song.DrumlessTrackPath);
         var drumStemPath = _fileStorage.ResolveAssetPath(song.DrumStemPath);
-        _audioEngine.LoadSession(backingPath, drumStemPath);
+        var tempoChange = TimeStretchEngine.SpeedPercentToTempoChange(speedPercent);
+        _audioEngine.LoadSession(backingPath, drumStemPath,
+            tempoChangePercent: tempoChange);
     }
 
     private async Task EnsureSeparatedAssetsAsync(Song song)
