@@ -21,6 +21,7 @@ public class PracticeSessionService : IDisposable
     private readonly FileStorageService _fileStorage;
     private readonly SongRepository _songRepo;
     private readonly IAnalysisService _analysisService;
+    private readonly SettingsService _settingsService;
 
     private Song? _currentSong;
     private List<HighwayNote> _highwayNotes = new();
@@ -53,7 +54,8 @@ public class PracticeSessionService : IDisposable
         PracticeRunRepository runRepo,
         FileStorageService fileStorage,
         SongRepository songRepo,
-        IAnalysisService analysisService)
+        IAnalysisService analysisService,
+        SettingsService settingsService)
     {
         _audioEngine = audioEngine;
         _midiEngine = midiEngine;
@@ -62,6 +64,7 @@ public class PracticeSessionService : IDisposable
         _fileStorage = fileStorage;
         _songRepo = songRepo;
         _analysisService = analysisService;
+        _settingsService = settingsService;
 
         // Wire up events
         _hitDetection.NoteHit += (note, timeDiff) => NoteHit?.Invoke(note, timeDiff);
@@ -78,6 +81,9 @@ public class PracticeSessionService : IDisposable
         _currentSong = song;
         _difficulty = difficulty;
         _speedPercent = speedPercent;
+
+        // Ensure the MIDI input device is open so we can receive hits
+        await EnsureMidiDeviceOpenAsync();
 
         await EnsureSeparatedAssetsAsync(song);
 
@@ -295,8 +301,48 @@ public class PracticeSessionService : IDisposable
         _audioEngine.SetMetronomeEnabled(enabled);
     }
 
+    /// <summary>
+    /// Opens the user's selected MIDI input device if it isn't already open.
+    /// Reads the device selection from saved settings.
+    /// </summary>
+    private async Task EnsureMidiDeviceOpenAsync()
+    {
+        if (_midiEngine.IsOpen) return;
+
+        var settings = await _settingsService.GetSettingsAsync();
+        var devices = MidiInputEngine.GetMidiDevices();
+
+        if (devices.Count == 0)
+        {
+            System.Diagnostics.Debug.WriteLine("No MIDI input devices found.");
+            return;
+        }
+
+        // Try to find the device matching saved settings
+        int deviceIndex = 0; // default to first device
+        if (!string.IsNullOrEmpty(settings.MidiInputDeviceId))
+        {
+            var match = devices.FirstOrDefault(d => d.Name == settings.MidiInputDeviceId);
+            if (match != default)
+            {
+                deviceIndex = match.Index;
+            }
+        }
+
+        try
+        {
+            _midiEngine.Open(deviceIndex);
+            System.Diagnostics.Debug.WriteLine($"MIDI device opened: {devices[deviceIndex].Name}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to open MIDI device: {ex.Message}");
+        }
+    }
+
     public void Dispose()
     {
         _midiEngine.NoteOnReceived -= OnMidiNoteOn;
+        _midiEngine.Close();
     }
 }
