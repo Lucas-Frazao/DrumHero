@@ -59,7 +59,7 @@ namespace DrumHero.Views.Controls {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/DrumHero;component/views/controls/drumhighwaycontrol.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/DrumHero;V1.0.0.0;component/views/controls/drumhighwaycontrol.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\Views\Controls\DrumHighwayControl.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

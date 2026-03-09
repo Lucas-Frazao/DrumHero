@@ -52,7 +52,7 @@ namespace DrumHero.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/DrumHero;component/views/analysisprogressview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/DrumHero;V1.0.0.0;component/views/analysisprogressview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\Views\AnalysisProgressView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

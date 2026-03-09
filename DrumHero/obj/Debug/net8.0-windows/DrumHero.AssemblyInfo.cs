@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Drum Hero - Guitar Hero-style drum training application for electronic drum kits")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+49a25bebb4305531bad1c62a79778e1bf57b838c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+11407e361c5b54a29f226504aef50145eff5e2e7")]
 [assembly: System.Reflection.AssemblyProductAttribute("DrumHero")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DrumHero")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
