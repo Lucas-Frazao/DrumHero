@@ -1,5 +1,5 @@
 ﻿DrumHero
-
+1.0.0.0
 
 winexe
 C#
@@ -12,9 +12,9 @@ TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR
 C:\GeneralProjects\DrumHero\DrumHero\App.xaml
 61448913921
 
-42-108973555
+441044834296
 248-290254316
 MainWindow.xaml;Views\AnalysisProgressView.xaml;Views\Controls\DrumHighwayControl.xaml;Views\LibraryView.xaml;Views\PracticeView.xaml;Views\SettingsView.xaml;
 
-False
+True
 
