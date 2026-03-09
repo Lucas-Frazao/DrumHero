@@ -333,8 +333,6 @@ public class PracticeSessionService : IDisposable
     /// </summary>
     private async Task EnsureMidiDeviceOpenAsync()
     {
-        if (_midiEngine.IsOpen) return;
-
         var settings = await _settingsService.GetSettingsAsync();
         var devices = MidiInputEngine.GetMidiDevices();
 
@@ -344,8 +342,8 @@ public class PracticeSessionService : IDisposable
             return;
         }
 
-        // Try to find the device matching saved settings
-        int deviceIndex = 0; // default to first device
+        // Find the device matching saved settings, or fall back to first device
+        int deviceIndex = 0;
         if (!string.IsNullOrEmpty(settings.MidiInputDeviceId))
         {
             var match = devices.FirstOrDefault(d => d.Name == settings.MidiInputDeviceId);
@@ -355,6 +353,9 @@ public class PracticeSessionService : IDisposable
             }
         }
 
+        // If already open on the correct device, nothing to do
+        if (_midiEngine.IsOpen) return;
+
         try
         {
             _midiEngine.Open(deviceIndex);
@@ -363,6 +364,19 @@ public class PracticeSessionService : IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Failed to open MIDI device: {ex.Message}");
+            // If the preferred device failed, try the first available device as fallback
+            if (deviceIndex != 0)
+            {
+                try
+                {
+                    _midiEngine.Open(0);
+                    System.Diagnostics.Debug.WriteLine($"Fallback MIDI device opened: {devices[0].Name}");
+                }
+                catch (Exception fallbackEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Fallback MIDI device also failed: {fallbackEx.Message}");
+                }
+            }
         }
     }
 
