@@ -3,19 +3,27 @@ using DrumHero.Models;
 namespace DrumHero.Audio;
 
 /// <summary>
-/// Generates synthesized drum one-shot samples in memory.
-/// Each drum sound is modeled with sine/noise components, pitch envelopes,
-/// and amplitude envelopes to approximate real drum characteristics.
+/// Generates synthesized drum one-shot samples modeled after Lars Ulrich's
+/// drum sound on Metallica's "…And Justice for All" (1988).
+///
+/// Key sonic characteristics targeted:
+///   - Kick: tight, clicky beater attack (3-6 kHz), scooped mids, sub-bass
+///     rumble around 60 Hz, very short sustain, dry and mechanical.
+///   - Snare: thin, bright, papery crack with prominent snare wire buzz,
+///     minimal body, fast gated decay.
+///   - Toms: deep-tuned Tama shells (13"/15" rack, 18-20" floor), heavy
+///     pitch drop on attack, gated sustain, dry and punchy.
+///   - Hi-hats: bright, cutting, tight.
+///   - Cymbals: bright and aggressive, relatively dry sustain.
+///   - Overall: dry, sterile, no room ambience, treble-forward.
+///
 /// All samples are pre-computed at construction for zero-latency playback.
+/// Stereo interleaved float arrays (L, R, L, R, …).
 /// </summary>
 public static class DrumSoundGenerator
 {
     private const int SampleRate = 44100;
 
-    /// <summary>
-    /// Pre-generates all drum samples, keyed by DrumLane.
-    /// Returns stereo interleaved float arrays (L, R, L, R, ...).
-    /// </summary>
     public static Dictionary<DrumLane, float[]> GenerateAllSamples()
     {
         return new Dictionary<DrumLane, float[]>
@@ -25,46 +33,66 @@ public static class DrumSoundGenerator
             { DrumLane.Snare, GenerateSnare() },
             { DrumLane.ClosedHiHat, GenerateClosedHiHat() },
             { DrumLane.OpenHiHat, GenerateOpenHiHat() },
-            { DrumLane.RackTom1, GenerateTom(200, 0.30) },   // High tom
-            { DrumLane.RackTom2, GenerateTom(150, 0.35) },   // Mid tom
-            { DrumLane.FloorTom, GenerateTom(100, 0.40) },   // Floor tom
-            { DrumLane.Crash1, GenerateCrash(0.55) },
-            { DrumLane.Crash2, GenerateCrash(0.50) },
-            { DrumLane.Crash3, GenerateCrash(0.45) },
+            { DrumLane.RackTom1, GenerateTom(170, 0.22) },   // 13" rack tom — high, tight
+            { DrumLane.RackTom2, GenerateTom(120, 0.26) },   // 15" rack tom — mid, gated
+            { DrumLane.FloorTom, GenerateTom(75, 0.32) },    // 18-20" floor tom — deep, boomy
+            { DrumLane.Crash1, GenerateCrash(0.65, 4800) },   // Crash 1 — bright
+            { DrumLane.Crash2, GenerateCrash(0.60, 4400) },   // Crash 2 — slightly darker
+            { DrumLane.Crash3, GenerateCrash(0.50, 5200) },   // Crash 3 / China — cutting
             { DrumLane.Ride, GenerateRide() },
         };
     }
 
     /// <summary>
-    /// Kick drum: low sine wave with sharp pitch drop + sub-bass body.
+    /// AJFA Kick: tight "click" beater attack at 3-6 kHz, scooped mids,
+    /// sub-bass body around 55-65 Hz, very short sustain, no room.
+    /// Flemming Rasmussen used heavy graphic EQ on RE20 mics — big boost
+    /// around 60 Hz and 3-6 kHz with scooped mids in between.
     /// </summary>
     private static float[] GenerateKick()
     {
-        double duration = 0.35;
+        double duration = 0.28; // tight, short sustain
         int samples = (int)(SampleRate * duration);
-        var buffer = new float[samples * 2]; // stereo
+        var buffer = new float[samples * 2];
+        var rng = new Random(88); // for beater noise
 
         double phase = 0;
         for (int i = 0; i < samples; i++)
         {
             double t = (double)i / SampleRate;
 
-            // Pitch envelope: starts at ~150 Hz, drops to ~50 Hz
-            double freq = 50 + 100 * Math.Exp(-t * 25);
+            // Sub-bass body: starts at ~90 Hz, drops to ~55 Hz (deep 22x18 kick)
+            double freq = 55 + 35 * Math.Exp(-t * 30);
 
-            // Amplitude envelope: sharp attack, medium decay
-            double ampEnv = Math.Exp(-t * 8.0);
-
-            // Transient click at the very start
-            double click = t < 0.005 ? Math.Exp(-t * 800) * 0.4 : 0;
+            // Very tight amplitude envelope — gated, dead, dry
+            double bodyEnv = Math.Exp(-t * 14.0);
 
             phase += 2 * Math.PI * freq / SampleRate;
-            double sample = Math.Sin(phase) * ampEnv * 0.85 + click;
+            double body = Math.Sin(phase) * bodyEnv * 0.7;
 
-            // Soft clip for warmth
-            sample = Math.Tanh(sample * 1.2);
+            // Prominent beater click/attack — this IS the AJFA kick sound
+            // Sharp transient with energy at 3-6 kHz
+            double clickEnv = Math.Exp(-t * 350);
+            double click = 0;
+            if (t < 0.012)
+            {
+                // High-frequency beater slap: layered sine bursts at attack freqs
+                click += Math.Sin(2 * Math.PI * 3500 * t) * 0.45 * clickEnv;
+                click += Math.Sin(2 * Math.PI * 5000 * t) * 0.35 * clickEnv;
+                click += Math.Sin(2 * Math.PI * 6500 * t) * 0.20 * clickEnv;
+                // A little plastic beater noise
+                click += (rng.NextDouble() * 2 - 1) * 0.25 * Math.Exp(-t * 500);
+            }
 
-            float s = (float)(sample * 0.9);
+            // Scooped mids: the body sine naturally has no mid content,
+            // and the click is high-frequency, so mids are inherently absent.
+
+            double sample = body + click;
+
+            // Hard clip for that aggressive, mechanical feel
+            sample = Math.Tanh(sample * 1.5);
+
+            float s = (float)(sample * 0.90);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -73,32 +101,46 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// Snare drum: mid-frequency tone body + filtered noise for snare wires.
+    /// AJFA Snare: thin, dry, bright, papery crack. Prominent snare wire
+    /// buzz in the upper mids/highs, minimal shell body resonance.
+    /// Fast gated decay. Very up-front and aggressive.
     /// </summary>
     private static float[] GenerateSnare()
     {
-        double duration = 0.25;
+        double duration = 0.18; // short, gated
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
-        var rng = new Random(42); // deterministic for consistent sound
+        var rng = new Random(42);
 
         double phase = 0;
         for (int i = 0; i < samples; i++)
         {
             double t = (double)i / SampleRate;
 
-            // Tone body: ~200 Hz with fast decay
-            double toneFreq = 200 + 50 * Math.Exp(-t * 30);
+            // Shell tone: thin, high-tuned ~240 Hz, decays FAST
+            double toneFreq = 240 + 40 * Math.Exp(-t * 50);
             phase += 2 * Math.PI * toneFreq / SampleRate;
-            double tone = Math.Sin(phase) * Math.Exp(-t * 15) * 0.5;
+            double tone = Math.Sin(phase) * Math.Exp(-t * 25) * 0.30;
 
-            // Snare noise: white noise with bandpass character, longer tail
-            double noise = (rng.NextDouble() * 2 - 1) * Math.Exp(-t * 10) * 0.55;
+            // Snare wire buzz: prominent bright noise, the defining character
+            // Decays a bit slower than the shell tone — that papery sizzle
+            double wireNoise = (rng.NextDouble() * 2 - 1);
+            // High-pass character: emphasize upper frequencies
+            double wireEnv = Math.Exp(-t * 14);
+            double wires = wireNoise * wireEnv * 0.55;
 
-            // Transient crack
-            double crack = t < 0.003 ? (rng.NextDouble() * 2 - 1) * 0.6 : 0;
+            // Hard transient crack at onset
+            double crack = 0;
+            if (t < 0.003)
+            {
+                crack = (rng.NextDouble() * 2 - 1) * 0.75 * Math.Exp(-t * 1200);
+                // High-frequency stick impact
+                crack += Math.Sin(2 * Math.PI * 4500 * t) * 0.4 * Math.Exp(-t * 800);
+            }
 
-            double sample = Math.Tanh((tone + noise + crack) * 1.1);
+            // Minimal low-end body (thin, not warm)
+            double sample = tone + wires + crack;
+            sample = Math.Tanh(sample * 1.3);
 
             float s = (float)(sample * 0.85);
             buffer[i * 2] = s;
@@ -109,11 +151,11 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// Closed hi-hat: high-frequency filtered noise, very short decay.
+    /// AJFA Closed hi-hat: bright, tight, cutting. Crisp attack.
     /// </summary>
     private static float[] GenerateClosedHiHat()
     {
-        double duration = 0.08;
+        double duration = 0.06; // very tight
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
         var rng = new Random(123);
@@ -122,18 +164,21 @@ public static class DrumSoundGenerator
         {
             double t = (double)i / SampleRate;
 
-            // High-frequency metallic noise
             double noise = rng.NextDouble() * 2 - 1;
 
-            // Shape with very fast decay
-            double env = Math.Exp(-t * 60);
+            // Very fast, crisp decay
+            double env = Math.Exp(-t * 80);
 
-            // Add some high-freq ring
-            double ring = Math.Sin(2 * Math.PI * 6000 * t) * 0.15 * Math.Exp(-t * 80);
+            // Bright metallic ring — pushed high for that cutting AJFA cymbal tone
+            double ring1 = Math.Sin(2 * Math.PI * 7500 * t) * 0.18 * Math.Exp(-t * 100);
+            double ring2 = Math.Sin(2 * Math.PI * 9500 * t) * 0.10 * Math.Exp(-t * 110);
 
-            double sample = (noise * env * 0.6 + ring);
+            // Stick contact transient
+            double stick = t < 0.002 ? (rng.NextDouble() * 2 - 1) * 0.5 * Math.Exp(-t * 1500) : 0;
 
-            float s = (float)(sample * 0.7);
+            double sample = noise * env * 0.5 + ring1 + ring2 + stick;
+
+            float s = (float)(sample * 0.70);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -142,11 +187,11 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// Open hi-hat: similar to closed but much longer decay, slight tonal ring.
+    /// AJFA Open hi-hat: bright and sizzly but controlled sustain. Dry.
     /// </summary>
     private static float[] GenerateOpenHiHat()
     {
-        double duration = 0.45;
+        double duration = 0.35; // shorter than generic — dry, controlled
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
         var rng = new Random(456);
@@ -156,13 +201,14 @@ public static class DrumSoundGenerator
             double t = (double)i / SampleRate;
 
             double noise = rng.NextDouble() * 2 - 1;
-            double env = Math.Exp(-t * 6); // slow decay
+            double env = Math.Exp(-t * 8); // moderately fast decay
 
-            // Metallic ring components
-            double ring1 = Math.Sin(2 * Math.PI * 5500 * t) * 0.12;
-            double ring2 = Math.Sin(2 * Math.PI * 7200 * t) * 0.08;
+            // Bright, aggressive metallic partials
+            double ring1 = Math.Sin(2 * Math.PI * 6500 * t) * 0.14;
+            double ring2 = Math.Sin(2 * Math.PI * 8500 * t) * 0.10;
+            double ring3 = Math.Sin(2 * Math.PI * 11000 * t) * 0.05;
 
-            double sample = (noise * 0.5 + ring1 + ring2) * env;
+            double sample = (noise * 0.40 + ring1 + ring2 + ring3) * env;
 
             float s = (float)(sample * 0.65);
             buffer[i * 2] = s;
@@ -173,35 +219,47 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// Tom drum: sine tone with pitch drop, resonant body.
+    /// AJFA Tom: deep-tuned Tama shells, heavy pitch drop on attack,
+    /// gated sustain (very dry, damped). Punchy transient, low resonance.
+    /// Lars used 13"/15" rack toms and 18-20" floor toms, tuned low.
     /// </summary>
-    /// <param name="baseFreq">Fundamental frequency (higher = higher tom)</param>
-    /// <param name="duration">Sustain duration in seconds</param>
+    /// <param name="baseFreq">Fundamental frequency (lower = deeper tom)</param>
+    /// <param name="duration">Sustain duration — kept short for gated feel</param>
     private static float[] GenerateTom(double baseFreq, double duration)
     {
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
+        var rng = new Random((int)(baseFreq * 7)); // deterministic per tom
 
         double phase = 0;
         for (int i = 0; i < samples; i++)
         {
             double t = (double)i / SampleRate;
 
-            // Pitch drops slightly on attack
-            double freq = baseFreq + 60 * Math.Exp(-t * 20);
+            // Heavy pitch drop on attack — characteristic of deep-tuned toms
+            double freq = baseFreq + 100 * Math.Exp(-t * 35);
 
             phase += 2 * Math.PI * freq / SampleRate;
             double tone = Math.Sin(phase);
 
-            // Amplitude: fast attack, medium-slow decay
-            double env = Math.Exp(-t * 7);
+            // Gated envelope: fast attack, then rapid cutoff (damped heads, no ring)
+            // Two-stage: initial punch then steep gate
+            double env = Math.Exp(-t * 12) * 0.7 + Math.Exp(-t * 30) * 0.3;
 
-            // Slight click transient
-            double click = t < 0.004 ? Math.Exp(-t * 500) * 0.3 : 0;
+            // Stick attack transient — punchy
+            double attack = 0;
+            if (t < 0.005)
+            {
+                attack = Math.Exp(-t * 600) * 0.4;
+                attack += (rng.NextDouble() * 2 - 1) * 0.15 * Math.Exp(-t * 800);
+            }
 
-            double sample = Math.Tanh((tone * env * 0.7 + click) * 1.1);
+            // Slight skin slap noise in upper mids
+            double skinNoise = (rng.NextDouble() * 2 - 1) * Math.Exp(-t * 40) * 0.08;
 
-            float s = (float)(sample * 0.8);
+            double sample = Math.Tanh((tone * env * 0.75 + attack + skinNoise) * 1.2);
+
+            float s = (float)(sample * 0.82);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -210,36 +268,41 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// Crash cymbal: layered noise bands with long decay and metallic ring.
+    /// AJFA Crash cymbal: bright, aggressive, cutting attack.
+    /// Sustain is present but drier than typical — the mix is so treble-forward
+    /// that cymbals are prominent but not washy.
     /// </summary>
-    private static float[] GenerateCrash(double duration)
+    /// <param name="duration">Sustain length in seconds</param>
+    /// <param name="baseRing">Base frequency for metallic ring partials</param>
+    private static float[] GenerateCrash(double duration, double baseRing)
     {
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
-        var rng = new Random(789);
+        var rng = new Random((int)(baseRing));
 
         for (int i = 0; i < samples; i++)
         {
             double t = (double)i / SampleRate;
 
-            // Noise burst for initial impact
-            double noise = (rng.NextDouble() * 2 - 1);
-            double noiseEnv = Math.Exp(-t * 3.5);
+            // Initial explosive hit — loud, bright burst
+            double noise = rng.NextDouble() * 2 - 1;
+            double burstEnv = Math.Exp(-t * 25) * 0.40;
 
-            // Metallic shimmer: multiple detuned high partials
-            double ring1 = Math.Sin(2 * Math.PI * 4200 * t) * 0.10;
-            double ring2 = Math.Sin(2 * Math.PI * 5800 * t) * 0.08;
-            double ring3 = Math.Sin(2 * Math.PI * 7400 * t) * 0.05;
-            double ringEnv = Math.Exp(-t * 2.5);
+            // Sustain noise — controlled wash
+            double washEnv = Math.Exp(-t * 3.0);
 
-            // Initial burst is louder
-            double burstEnv = Math.Exp(-t * 20) * 0.3;
+            // Bright, aggressive metallic partials — pushed high
+            double ring1 = Math.Sin(2 * Math.PI * baseRing * t) * 0.12;
+            double ring2 = Math.Sin(2 * Math.PI * (baseRing * 1.37) * t) * 0.09;
+            double ring3 = Math.Sin(2 * Math.PI * (baseRing * 1.82) * t) * 0.06;
+            double ring4 = Math.Sin(2 * Math.PI * (baseRing * 2.41) * t) * 0.03;
+            double ringEnv = Math.Exp(-t * 2.8);
 
-            double sample = noise * noiseEnv * 0.4
-                          + (ring1 + ring2 + ring3) * ringEnv
-                          + noise * burstEnv;
+            double sample = noise * burstEnv
+                          + noise * washEnv * 0.30
+                          + (ring1 + ring2 + ring3 + ring4) * ringEnv;
 
-            float s = (float)(sample * 0.6);
+            float s = (float)(sample * 0.62);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
@@ -248,11 +311,12 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// Ride cymbal: tighter than crash, prominent bell tone, controlled sustain.
+    /// AJFA Ride: tight bell ping with bright stick definition.
+    /// Controlled wash, not too much sustain. Dry and precise.
     /// </summary>
     private static float[] GenerateRide()
     {
-        double duration = 0.6;
+        double duration = 0.50; // shorter than typical — dry
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
         var rng = new Random(321);
@@ -261,19 +325,19 @@ public static class DrumSoundGenerator
         {
             double t = (double)i / SampleRate;
 
-            // Bell tone: prominent mid-high frequency
-            double bell = Math.Sin(2 * Math.PI * 3000 * t) * 0.25 * Math.Exp(-t * 4);
+            // Prominent bell ping — the stick-on-metal sound
+            double bell = Math.Sin(2 * Math.PI * 3200 * t) * 0.28 * Math.Exp(-t * 5);
 
-            // Subtle wash
-            double noise = (rng.NextDouble() * 2 - 1) * 0.15 * Math.Exp(-t * 5);
+            // Bright stick click transient
+            double ping = Math.Sin(2 * Math.PI * 4200 * t) * Math.Exp(-t * 35) * 0.25;
 
-            // Metallic partials
-            double ring = Math.Sin(2 * Math.PI * 5000 * t) * 0.06 * Math.Exp(-t * 6);
+            // Minimal wash — dry ride, not crashy
+            double noise = (rng.NextDouble() * 2 - 1) * 0.10 * Math.Exp(-t * 7);
 
-            // Ping transient
-            double ping = Math.Sin(2 * Math.PI * 3500 * t) * Math.Exp(-t * 30) * 0.2;
+            // Upper harmonic shimmer
+            double shimmer = Math.Sin(2 * Math.PI * 6800 * t) * 0.05 * Math.Exp(-t * 8);
 
-            double sample = bell + noise + ring + ping;
+            double sample = bell + ping + noise + shimmer;
 
             float s = (float)(sample * 0.65);
             buffer[i * 2] = s;
