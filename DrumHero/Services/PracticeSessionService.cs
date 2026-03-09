@@ -158,8 +158,16 @@ public class PracticeSessionService : IDisposable
         if (string.IsNullOrWhiteSpace(sourceAudioPath) || !File.Exists(sourceAudioPath))
             throw new InvalidOperationException("No valid source audio found to repair song stems.");
 
+        // The MIDI file is required for the full analysis pipeline (stem separation + transcription).
+        // If the original MIDI file is no longer available, we cannot fully repair.
+        var midiPath = song.OriginalMidiFilePath;
+        if (string.IsNullOrWhiteSpace(midiPath) || !File.Exists(midiPath))
+            throw new InvalidOperationException(
+                "Cannot repair song: the original Songsterr MIDI file is no longer available. " +
+                "Please re-import the song with its MIDI file.");
+
         var outputDir = _fileStorage.GetSongDirectory(song.Id);
-        var result = await _analysisService.AnalyzeAsync(sourceAudioPath, outputDir);
+        var result = await _analysisService.AnalyzeAsync(sourceAudioPath, midiPath, outputDir);
         if (!result.Success)
             throw new InvalidOperationException(result.ErrorMessage ?? "Failed to rebuild drum stems.");
 

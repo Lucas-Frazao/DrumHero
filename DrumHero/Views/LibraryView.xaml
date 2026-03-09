@@ -140,7 +140,7 @@
                                FontSize="20"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,10"/>
-                    <TextBlock Text="Click 'Add Song' to import a .flac file and start practicing"
+                    <TextBlock Text="Click 'Add Song' to import a .flac file and drum MIDI from Songsterr"
                                Foreground="#505070"
                                FontSize="14"
                                HorizontalAlignment="Center"/>

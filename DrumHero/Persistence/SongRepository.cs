@@ -14,16 +14,17 @@ public class SongRepository
         using var conn = _db.CreateConnection();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
-            INSERT INTO Songs (Title, Artist, OriginalFilePath, DurationSeconds, BPM,
+            INSERT INTO Songs (Title, Artist, OriginalFilePath, OriginalMidiFilePath, DurationSeconds, BPM,
                 TimeSignatureNumerator, TimeSignatureDenominator, Status, DateProcessed,
                 LastPracticedDate, DrumlessTrackPath, DrumStemPath, HighwayDataPath)
-            VALUES (@title, @artist, @origPath, @duration, @bpm, @tsNum, @tsDen,
+            VALUES (@title, @artist, @origPath, @origMidiPath, @duration, @bpm, @tsNum, @tsDen,
                 @status, @dateProc, @lastPrac, @drumless, @drumStem, @highway);
             SELECT last_insert_rowid();";
         
         cmd.Parameters.AddWithValue("@title", song.Title);
         cmd.Parameters.AddWithValue("@artist", song.Artist);
         cmd.Parameters.AddWithValue("@origPath", song.OriginalFilePath);
+        cmd.Parameters.AddWithValue("@origMidiPath", song.OriginalMidiFilePath);
         cmd.Parameters.AddWithValue("@duration", song.DurationSeconds);
         cmd.Parameters.AddWithValue("@bpm", song.BPM);
         cmd.Parameters.AddWithValue("@tsNum", song.TimeSignatureNumerator);
@@ -46,16 +47,17 @@ public class SongRepository
         using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
             UPDATE Songs SET Title=@title, Artist=@artist, OriginalFilePath=@origPath,
-                DurationSeconds=@duration, BPM=@bpm, TimeSignatureNumerator=@tsNum,
-                TimeSignatureDenominator=@tsDen, Status=@status, DateProcessed=@dateProc,
-                LastPracticedDate=@lastPrac, DrumlessTrackPath=@drumless,
-                DrumStemPath=@drumStem, HighwayDataPath=@highway
+                OriginalMidiFilePath=@origMidiPath, DurationSeconds=@duration, BPM=@bpm,
+                TimeSignatureNumerator=@tsNum, TimeSignatureDenominator=@tsDen,
+                Status=@status, DateProcessed=@dateProc, LastPracticedDate=@lastPrac,
+                DrumlessTrackPath=@drumless, DrumStemPath=@drumStem, HighwayDataPath=@highway
             WHERE Id=@id";
         
         cmd.Parameters.AddWithValue("@id", song.Id);
         cmd.Parameters.AddWithValue("@title", song.Title);
         cmd.Parameters.AddWithValue("@artist", song.Artist);
         cmd.Parameters.AddWithValue("@origPath", song.OriginalFilePath);
+        cmd.Parameters.AddWithValue("@origMidiPath", song.OriginalMidiFilePath);
         cmd.Parameters.AddWithValue("@duration", song.DurationSeconds);
         cmd.Parameters.AddWithValue("@bpm", song.BPM);
         cmd.Parameters.AddWithValue("@tsNum", song.TimeSignatureNumerator);
@@ -111,6 +113,8 @@ public class SongRepository
         Title = reader.GetString(reader.GetOrdinal("Title")),
         Artist = reader.GetString(reader.GetOrdinal("Artist")),
         OriginalFilePath = reader.GetString(reader.GetOrdinal("OriginalFilePath")),
+        OriginalMidiFilePath = reader.IsDBNull(reader.GetOrdinal("OriginalMidiFilePath"))
+            ? string.Empty : reader.GetString(reader.GetOrdinal("OriginalMidiFilePath")),
         DurationSeconds = reader.GetDouble(reader.GetOrdinal("DurationSeconds")),
         BPM = reader.GetDouble(reader.GetOrdinal("BPM")),
         TimeSignatureNumerator = reader.GetInt32(reader.GetOrdinal("TimeSignatureNumerator")),

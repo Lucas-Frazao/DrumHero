@@ -59,27 +59,47 @@ public partial class LibraryViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddSongAsync()
     {
-        var dialog = new OpenFileDialog
+        // Step 1: Pick the FLAC audio file
+        var flacDialog = new OpenFileDialog
         {
-            Title = "Select a FLAC audio file",
+            Title = "Step 1/2: Select a FLAC audio file",
             Filter = "FLAC files (*.flac)|*.flac",
             CheckFileExists = true
         };
 
-        if (dialog.ShowDialog() != true) return;
+        if (flacDialog.ShowDialog() != true) return;
 
-        var filePath = dialog.FileName;
-        var (isValid, error) = _importService.ValidateFile(filePath);
+        var flacPath = flacDialog.FileName;
+        var (isFlacValid, flacError) = _importService.ValidateFlacFile(flacPath);
 
-        if (!isValid)
+        if (!isFlacValid)
         {
-            MessageBox.Show(error!, "Invalid File", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(flacError!, "Invalid FLAC File", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        // Navigate to analysis progress view
+        // Step 2: Pick the MIDI drum file (from Songsterr)
+        var midiDialog = new OpenFileDialog
+        {
+            Title = "Step 2/2: Select the drum MIDI file (from Songsterr)",
+            Filter = "MIDI files (*.mid;*.midi)|*.mid;*.midi",
+            CheckFileExists = true
+        };
+
+        if (midiDialog.ShowDialog() != true) return;
+
+        var midiPath = midiDialog.FileName;
+        var (isMidiValid, midiError) = _importService.ValidateMidiFile(midiPath);
+
+        if (!isMidiValid)
+        {
+            MessageBox.Show(midiError!, "Invalid MIDI File", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Navigate to analysis progress view with both file paths
         var analysisVm = _analysisVmFactory();
-        analysisVm.SetFilePath(filePath);
+        analysisVm.SetFilePaths(flacPath, midiPath);
         analysisVm.AnalysisCompleted += async () =>
         {
             await _navigation.NavigateToAsync<LibraryViewModel>();

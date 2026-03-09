@@ -6,6 +6,7 @@ public class Song
     public string Title { get; set; } = string.Empty;
     public string Artist { get; set; } = string.Empty;
     public string OriginalFilePath { get; set; } = string.Empty;
+    public string OriginalMidiFilePath { get; set; } = string.Empty;
     public double DurationSeconds { get; set; }
     public double BPM { get; set; }
     public int TimeSignatureNumerator { get; set; } = 4;

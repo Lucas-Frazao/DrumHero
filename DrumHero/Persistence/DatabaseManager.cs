@@ -33,6 +33,7 @@ public class DatabaseManager : IDisposable
                 Title TEXT NOT NULL,
                 Artist TEXT NOT NULL DEFAULT '',
                 OriginalFilePath TEXT NOT NULL,
+                OriginalMidiFilePath TEXT NOT NULL DEFAULT '',
                 DurationSeconds REAL NOT NULL DEFAULT 0,
                 BPM REAL NOT NULL DEFAULT 120,
                 TimeSignatureNumerator INTEGER NOT NULL DEFAULT 4,
@@ -69,6 +70,19 @@ public class DatabaseManager : IDisposable
             CREATE INDEX IF NOT EXISTS idx_practice_runs_timestamp ON PracticeRuns(Timestamp);
         ";
         cmd.ExecuteNonQuery();
+
+        // Migration: add OriginalMidiFilePath column for existing databases
+        using var migrationCmd = connection.CreateCommand();
+        migrationCmd.CommandText = @"
+            SELECT COUNT(*) FROM pragma_table_info('Songs') WHERE name='OriginalMidiFilePath';
+        ";
+        var hasColumn = Convert.ToInt64(migrationCmd.ExecuteScalar()) > 0;
+        if (!hasColumn)
+        {
+            using var alterCmd = connection.CreateCommand();
+            alterCmd.CommandText = "ALTER TABLE Songs ADD COLUMN OriginalMidiFilePath TEXT NOT NULL DEFAULT '';";
+            alterCmd.ExecuteNonQuery();
+        }
     }
     
     public void Dispose()

@@ -21,9 +21,9 @@ public class SongImportService
     }
 
     /// <summary>
-    /// Validates that the file is a valid .flac file.
+    /// Validates that the FLAC file is valid.
     /// </summary>
-    public (bool IsValid, string? ErrorMessage) ValidateFile(string filePath)
+    public (bool IsValid, string? ErrorMessage) ValidateFlacFile(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
             return (false, "No file selected.");
@@ -33,6 +33,24 @@ public class SongImportService
 
         if (!filePath.EndsWith(".flac", StringComparison.OrdinalIgnoreCase))
             return (false, "Only .flac files are supported.");
+
+        return (true, null);
+    }
+
+    /// <summary>
+    /// Validates that the MIDI file is valid.
+    /// </summary>
+    public (bool IsValid, string? ErrorMessage) ValidateMidiFile(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return (false, "No MIDI file selected.");
+
+        if (!System.IO.File.Exists(filePath))
+            return (false, $"File not found: {filePath}");
+
+        if (!filePath.EndsWith(".mid", StringComparison.OrdinalIgnoreCase) &&
+            !filePath.EndsWith(".midi", StringComparison.OrdinalIgnoreCase))
+            return (false, "Only .mid / .midi files are supported.");
 
         return (true, null);
     }
@@ -59,10 +77,12 @@ public class SongImportService
     }
 
     /// <summary>
-    /// Imports and analyzes a FLAC file. Creates a song entry, runs analysis, and stores assets.
+    /// Imports a FLAC file (for audio) and a MIDI file (for drum highway).
+    /// Runs Demucs stem separation on the FLAC, then parses the MIDI for the highway.
     /// </summary>
     public async Task<Song> ImportAsync(
         string flacFilePath,
+        string midiFilePath,
         IProgress<AnalysisProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -75,6 +95,7 @@ public class SongImportService
             Title = title,
             Artist = artist,
             OriginalFilePath = flacFilePath,
+            OriginalMidiFilePath = midiFilePath,
             DurationSeconds = duration,
             Status = SongStatus.Analyzing,
             DateProcessed = DateTime.Now,
@@ -87,13 +108,12 @@ public class SongImportService
             // Create output directory for this song
             var outputDir = _fileStorage.GetSongDirectory(song.Id);
 
-            // Run analysis
+            // Run analysis: Demucs for audio separation + MIDI parsing for highway
             var result = await _analysisService.AnalyzeAsync(
-                flacFilePath, outputDir, progress, cancellationToken);
+                flacFilePath, midiFilePath, outputDir, progress, cancellationToken);
 
             if (!result.Success)
             {
-                // Clean up on failure
                 await _songRepo.DeleteSongAsync(song.Id);
                 _fileStorage.DeleteSongAssets(song.Id);
                 throw new InvalidOperationException(result.ErrorMessage ?? "Analysis failed.");
@@ -123,7 +143,6 @@ public class SongImportService
         }
         catch (Exception) when (song.Id > 0)
         {
-            // Mark as error but don't delete - user can retry
             song.Status = SongStatus.Error;
             await _songRepo.UpdateSongAsync(song);
             throw;

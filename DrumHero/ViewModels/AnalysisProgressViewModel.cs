@@ -11,7 +11,8 @@ public partial class AnalysisProgressViewModel : ViewModelBase
 {
     private readonly SongImportService _importService;
     private CancellationTokenSource? _cts;
-    private string _filePath = string.Empty;
+    private string _flacFilePath = string.Empty;
+    private string _midiFilePath = string.Empty;
 
     [ObservableProperty]
     private string _songTitle = string.Empty;
@@ -44,10 +45,14 @@ public partial class AnalysisProgressViewModel : ViewModelBase
         _importService = importService;
     }
 
-    public void SetFilePath(string filePath)
+    /// <summary>
+    /// Sets both file paths for the import (FLAC audio + Songsterr MIDI).
+    /// </summary>
+    public void SetFilePaths(string flacFilePath, string midiFilePath)
     {
-        _filePath = filePath;
-        var (title, artist, _) = _importService.ReadMetadata(filePath);
+        _flacFilePath = flacFilePath;
+        _midiFilePath = midiFilePath;
+        var (title, artist, _) = _importService.ReadMetadata(flacFilePath);
         SongTitle = $"{title} - {artist}";
     }
 
@@ -71,7 +76,7 @@ public partial class AnalysisProgressViewModel : ViewModelBase
 
         try
         {
-            await _importService.ImportAsync(_filePath, progress, _cts.Token);
+            await _importService.ImportAsync(_flacFilePath, _midiFilePath, progress, _cts.Token);
 
             IsComplete = true;
             StatusMessage = "Analysis complete! Song is ready to practice.";
