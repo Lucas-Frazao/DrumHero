@@ -46,8 +46,6 @@ public class PracticeSessionService : IDisposable
     public event Action<HighwayNote>? NoteMissed;
     public event Action<DrumLane, double>? ExtraHit;
     public event Action? PlaybackEnded;
-    /// <summary>Fires on every MIDI Note-On for diagnostic display: (midiNote, lane name or "unmapped")</summary>
-    public event Action<int, string>? MidiNoteDebug;
 
     public PracticeSessionService(
         AudioPlaybackEngine audioEngine,
@@ -258,10 +256,6 @@ public class PracticeSessionService : IDisposable
     private void OnMidiNoteOn(int midiNote, int velocity, double timestampMs)
     {
         var lane = MidiDrumMap.GetLane(midiNote);
-
-        // Fire diagnostic event so the UI can show the raw MIDI note number
-        MidiNoteDebug?.Invoke(midiNote, lane?.ToString() ?? "unmapped");
-
         if (lane == null) return;
 
         // Always trigger audible feedback regardless of play state —

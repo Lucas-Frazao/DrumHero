@@ -79,14 +79,6 @@
                     </TextBlock>
                 </Border>
                 
-                <!-- MIDI Debug display (toggled) -->
-                <Border DockPanel.Dock="Right" Background="#2A1A40" CornerRadius="6"
-                        Padding="12,6" Margin="5,0" VerticalAlignment="Center"
-                        Visibility="{Binding ShowMidiDebug, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
-                    <TextBlock Text="{Binding LastMidiDebug}" Foreground="#E0B0FF" FontSize="13"
-                               FontWeight="SemiBold" FontFamily="Consolas"/>
-                </Border>
-                
                 <!-- Spacer -->
                 <TextBlock/>
             </DockPanel>
@@ -211,31 +203,6 @@
                                     <DataTrigger Binding="{Binding MetronomeEnabled}" Value="True">
                                         <Setter Property="Background" Value="#0F3460"/>
                                         <Setter Property="Content" Value="🔊 Metro"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" 
-                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    
-                    <!-- MIDI debug toggle -->
-                    <Button Padding="10,6" Margin="10,0,0,0" Command="{Binding ToggleMidiDebugCommand}"
-                            Foreground="White" BorderThickness="0" FontFamily="Segoe UI" FontSize="12" Cursor="Hand">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="#2A2A4A"/>
-                                <Setter Property="Content" Value="🔌 MIDI"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowMidiDebug}" Value="True">
-                                        <Setter Property="Background" Value="#3A1A50"/>
-                                        <Setter Property="Content" Value="🔌 MIDI"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

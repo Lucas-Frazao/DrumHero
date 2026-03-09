@@ -56,10 +56,6 @@ public partial class PracticeViewModel : ViewModelBase
     [ObservableProperty] private double _metronomeVolume = 0.5;
     [ObservableProperty] private double _drumFeedbackVolume = 0.8;
 
-    // MIDI debug display
-    [ObservableProperty] private string _lastMidiDebug = string.Empty;
-    [ObservableProperty] private bool _showMidiDebug;
-
     // Highway notes (for the renderer)
     public List<HighwayNote> HighwayNotes => _sessionService.HighwayNotes;
 
@@ -99,7 +95,6 @@ public partial class PracticeViewModel : ViewModelBase
         _sessionService.NoteMissed += OnNoteMissed;
         _sessionService.ExtraHit += OnExtraHit;
         _sessionService.PlaybackEnded += OnPlaybackEnded;
-        _sessionService.MidiNoteDebug += OnMidiNoteDebug;
     }
 
     public void SetSong(Song song)
@@ -283,21 +278,6 @@ public partial class PracticeViewModel : ViewModelBase
     {
         // Visual feedback for extra hits (not counted as miss)
         LaneFlash?.Invoke(lane, true);
-    }
-
-    private void OnMidiNoteDebug(int midiNote, string laneName)
-    {
-        // Update on UI thread since this fires from the MIDI thread
-        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
-        {
-            LastMidiDebug = $"MIDI {midiNote} → {laneName}";
-        });
-    }
-
-    [RelayCommand]
-    private void ToggleMidiDebug()
-    {
-        ShowMidiDebug = !ShowMidiDebug;
     }
 
     private async void OnPlaybackEnded()
