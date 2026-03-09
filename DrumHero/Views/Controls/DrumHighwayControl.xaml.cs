@@ -12,20 +12,22 @@ namespace DrumHero.Views.Controls;
 /// </summary>
 public partial class DrumHighwayControl : UserControl
 {
-    // Lane configuration - maps DrumLane to visual position and color
+    // Lane configuration - maps DrumLane to visual position and color.
+    // Ordered to mirror the physical drum kit from the drummer's perspective
+    // (left to right): hi-hats → crash 1 → snare/kick (center) → toms → floor → crash 2 → ride → crash 3
     private static readonly LaneConfig[] LaneConfigs = new LaneConfig[]
     {
-        new(DrumLane.LeftKick,     "KICK",   "#FF6B35"), // Orange
-        new(DrumLane.Snare,        "SNARE",  "#FFD700"), // Gold
-        new(DrumLane.ClosedHiHat,  "HH-C",   "#4ECDC4"), // Teal
-        new(DrumLane.OpenHiHat,    "HH-O",   "#45B7D1"), // Light blue
-        new(DrumLane.RackTom1,     "TOM1",   "#96CEB4"), // Sage
-        new(DrumLane.RackTom2,     "TOM2",   "#88D8B0"), // Mint
-        new(DrumLane.FloorTom,     "FLOOR",  "#FFEAA7"), // Light yellow
-        new(DrumLane.Crash1,       "CR1",    "#DDA0DD"), // Plum
-        new(DrumLane.Crash2,       "CR2",    "#DA70D6"), // Orchid
-        new(DrumLane.Crash3,       "CR3",    "#BA55D3"), // Medium orchid
-        new(DrumLane.Ride,         "RIDE",   "#87CEEB"), // Sky blue
+        new(DrumLane.ClosedHiHat,  "HH-C",   "#4ECDC4"), // Teal       — far left (left foot/hand)
+        new(DrumLane.OpenHiHat,    "HH-O",   "#45B7D1"), // Light blue — next to closed HH
+        new(DrumLane.Crash1,       "CR1",    "#DDA0DD"), // Plum       — left crash, above hi-hat area
+        new(DrumLane.Snare,        "SNARE",  "#FFD700"), // Gold       — center left (right in front of drummer)
+        new(DrumLane.LeftKick,     "KICK",   "#FF6B35"), // Orange     — center (pedal, under snare)
+        new(DrumLane.RackTom1,     "TOM1",   "#96CEB4"), // Sage       — center right (mounted above kick)
+        new(DrumLane.RackTom2,     "TOM2",   "#88D8B0"), // Mint       — right of tom 1
+        new(DrumLane.FloorTom,     "FLOOR",  "#FFEAA7"), // Light gold — right side
+        new(DrumLane.Crash2,       "CR2",    "#DA70D6"), // Orchid     — right crash, above floor tom
+        new(DrumLane.Ride,         "RIDE",   "#87CEEB"), // Sky blue   — far right
+        new(DrumLane.Crash3,       "CR3",    "#BA55D3"), // Med orchid — far right (extra crash / china)
     };
 
     // Rendering state
