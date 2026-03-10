@@ -1,0 +1,76 @@
+name: Build & Release DrumHero
+
+on:
+  push:
+    tags:
+      - 'v*'       # Trigger on version tags like v1.0.0
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+permissions:
+  contents: write  # Needed to create releases and upload assets
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore DrumHero/DrumHero.csproj
+
+      - name: Publish self-contained single-file exe
+        run: |
+          dotnet publish DrumHero/DrumHero.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            --output ./publish
+
+      - name: List publish output
+        run: Get-ChildItem ./publish -Recurse | Format-Table Name, Length
+
+      - name: Create ZIP archive
+        run: Compress-Archive -Path ./publish/* -DestinationPath ./DrumHero-win-x64.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DrumHero-win-x64
+          path: ./DrumHero-win-x64.zip
+
+      - name: Create GitHub Release (on tag push)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: DrumHero ${{ github.ref_name }}
+          body: |
+            ## DrumHero ${{ github.ref_name }}
+
+            **Guitar Hero-style drum training app for Windows**
+
+            ### Quick Start
+            1. Download `DrumHero-win-x64.zip` below
+            2. Extract to any folder
+            3. Run `DrumHero.exe`
+            4. Connect your Alesis Nitro Max via USB MIDI
+            5. Import a `.flac` song and start playing!
+
+            See the [README](https://github.com/${{ github.repository }}/blob/master/README.md) for full documentation, drum kit specifications, and setup instructions.
+
+            ### System Requirements
+            - Windows 10/11 (x64)
+            - USB MIDI drum kit (designed for Alesis Nitro Max)
+            - For song analysis: Python 3.8+ with Demucs and librosa
+          files: ./DrumHero-win-x64.zip
+          draft: false
+          prerelease: false
