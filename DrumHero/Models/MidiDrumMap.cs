@@ -18,14 +18,17 @@ public static class MidiDrumMap
         { 37, DrumLane.Snare },        // Side Stick → Snare
         { 39, DrumLane.Snare },        // Hand Clap → Snare
         
-        // Toms
+        // Toms — Alesis Nitro Max with 2 rack toms + 1 floor tom
+        // Physical Tom 1 (high rack) sends MIDI 48 or 50
+        // Physical Tom 2 (low rack) sends MIDI 45 or 47
+        // Physical Tom 3 (floor) sends MIDI 43, 58, or 41
         { 48, DrumLane.RackTom1 },     // Hi-Mid Tom (Tom 1)
         { 50, DrumLane.RackTom1 },     // High Tom / Tom 1 Rim
+        { 47, DrumLane.RackTom1 },     // Low-Mid Tom → Rack Tom 1 (Alesis Tom 1 alternate)
         { 45, DrumLane.RackTom2 },     // Low Tom (Tom 2)
-        { 47, DrumLane.RackTom2 },     // Low-Mid Tom / Tom 2 Rim
-        { 43, DrumLane.FloorTom },     // High Floor Tom (Tom 3)
+        { 43, DrumLane.RackTom2 },     // High Floor Tom → Rack Tom 2 (Alesis Tom 2 on 3-tom kit)
         { 58, DrumLane.FloorTom },     // Tom 3 Rim (Vibraslap in GM, but Alesis uses it as tom rim)
-        { 41, DrumLane.FloorTom },     // Low Floor Tom → Floor Tom (no longer conflicts with cymbal)
+        { 41, DrumLane.FloorTom },     // Low Floor Tom → Floor Tom
         
         // Hi-Hat
         { 42, DrumLane.ClosedHiHat },  // Closed Hi-Hat
@@ -124,8 +127,8 @@ public static class MidiDrumMap
         { DrumLane.RightKick, 36 },
         { DrumLane.Snare, 38 },
         { DrumLane.RackTom1, 48 },
-        { DrumLane.RackTom2, 45 },
-        { DrumLane.FloorTom, 43 },
+        { DrumLane.RackTom2, 43 },
+        { DrumLane.FloorTom, 41 },
         { DrumLane.ClosedHiHat, 42 },
         { DrumLane.OpenHiHat, 46 },
         { DrumLane.Crash1, 49 },

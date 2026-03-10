@@ -44,53 +44,50 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// AJFA Kick: tight "click" beater attack at 3-6 kHz, scooped mids,
-    /// sub-bass body around 55-65 Hz, very short sustain, no room.
-    /// Flemming Rasmussen used heavy graphic EQ on RE20 mics — big boost
-    /// around 60 Hz and 3-6 kHz with scooped mids in between.
+    /// Kick drum: heavy, punchy bass with just enough beater definition.
+    /// Deep sub-bass body around 45-60 Hz with longer sustain for weight,
+    /// subtle click for definition but bass-dominant character.
     /// </summary>
     private static float[] GenerateKick()
     {
-        double duration = 0.28; // tight, short sustain
+        double duration = 0.40; // longer sustain for bass weight
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
-        var rng = new Random(88); // for beater noise
+        var rng = new Random(88);
 
         double phase = 0;
+        double phase2 = 0;
         for (int i = 0; i < samples; i++)
         {
             double t = (double)i / SampleRate;
 
-            // Sub-bass body: starts at ~90 Hz, drops to ~55 Hz (deep 22x18 kick)
-            double freq = 55 + 35 * Math.Exp(-t * 30);
+            // Deep bass body: starts at ~80 Hz, drops to ~45 Hz
+            double freq = 45 + 35 * Math.Exp(-t * 20);
 
-            // Very tight amplitude envelope — gated, dead, dry
-            double bodyEnv = Math.Exp(-t * 14.0);
+            // Slower decay for a heavier, more sustained bass thump
+            double bodyEnv = Math.Exp(-t * 7.0);
 
             phase += 2 * Math.PI * freq / SampleRate;
-            double body = Math.Sin(phase) * bodyEnv * 0.7;
+            double body = Math.Sin(phase) * bodyEnv * 0.95;
 
-            // Prominent beater click/attack — this IS the AJFA kick sound
-            // Sharp transient with energy at 3-6 kHz
-            double clickEnv = Math.Exp(-t * 350);
+            // Sub-bass harmonic for chest-punch weight (one octave below)
+            double subFreq = freq * 0.5;
+            phase2 += 2 * Math.PI * subFreq / SampleRate;
+            double sub = Math.Sin(phase2) * Math.Exp(-t * 9.0) * 0.35;
+
+            // Subtle beater click — just enough for definition, not dominant
             double click = 0;
-            if (t < 0.012)
+            if (t < 0.008)
             {
-                // High-frequency beater slap: layered sine bursts at attack freqs
-                click += Math.Sin(2 * Math.PI * 3500 * t) * 0.45 * clickEnv;
-                click += Math.Sin(2 * Math.PI * 5000 * t) * 0.35 * clickEnv;
-                click += Math.Sin(2 * Math.PI * 6500 * t) * 0.20 * clickEnv;
-                // A little plastic beater noise
-                click += (rng.NextDouble() * 2 - 1) * 0.25 * Math.Exp(-t * 500);
+                double clickEnv = Math.Exp(-t * 450);
+                click += Math.Sin(2 * Math.PI * 3000 * t) * 0.12 * clickEnv;
+                click += (rng.NextDouble() * 2 - 1) * 0.08 * Math.Exp(-t * 600);
             }
 
-            // Scooped mids: the body sine naturally has no mid content,
-            // and the click is high-frequency, so mids are inherently absent.
+            double sample = body + sub + click;
 
-            double sample = body + click;
-
-            // Hard clip for that aggressive, mechanical feel
-            sample = Math.Tanh(sample * 1.5);
+            // Soft saturation for warmth, not aggression
+            sample = Math.Tanh(sample * 1.1);
 
             float s = (float)(sample * 1.0);
             buffer[i * 2] = s;
