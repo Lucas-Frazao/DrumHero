@@ -7,8 +7,8 @@ namespace DrumHero.Audio;
 /// drum sound on Metallica's "…And Justice for All" (1988).
 ///
 /// Key sonic characteristics targeted:
-///   - Kick: tight, clicky beater attack (3-6 kHz), scooped mids, sub-bass
-///     rumble around 60 Hz, very short sustain, dry and mechanical.
+///   - Kick: massive, bold bass-dominant thump with deep sub-bass (40-55 Hz),
+///     layered harmonics, heavy saturation, long sustain. Minimal beater click.
 ///   - Snare: thin, bright, papery crack with prominent snare wire buzz,
 ///     minimal body, fast gated decay.
 ///   - Toms: deep-tuned Tama shells (13"/15" rack, 18-20" floor), heavy
@@ -44,52 +44,58 @@ public static class DrumSoundGenerator
     }
 
     /// <summary>
-    /// Kick drum: heavy, punchy bass with just enough beater definition.
-    /// Deep sub-bass body around 45-60 Hz with longer sustain for weight,
-    /// subtle click for definition but bass-dominant character.
+    /// Kick drum: massive, bold bass that dominates the mix.
+    /// Very deep sub-bass (40-55 Hz), long sustain, layered harmonics,
+    /// heavy saturation for loudness. Beater click kept minimal.
     /// </summary>
     private static float[] GenerateKick()
     {
-        double duration = 0.40; // longer sustain for bass weight
+        double duration = 0.50; // long sustain for maximum bass presence
         int samples = (int)(SampleRate * duration);
         var buffer = new float[samples * 2];
         var rng = new Random(88);
 
         double phase = 0;
         double phase2 = 0;
+        double phase3 = 0;
         for (int i = 0; i < samples; i++)
         {
             double t = (double)i / SampleRate;
 
-            // Deep bass body: starts at ~80 Hz, drops to ~45 Hz
-            double freq = 45 + 35 * Math.Exp(-t * 20);
+            // Deep bass body: starts at ~75 Hz, drops to ~40 Hz
+            double freq = 40 + 35 * Math.Exp(-t * 18);
 
-            // Slower decay for a heavier, more sustained bass thump
-            double bodyEnv = Math.Exp(-t * 7.0);
+            // Slow decay — bass hangs and fills the room
+            double bodyEnv = Math.Exp(-t * 5.0);
 
             phase += 2 * Math.PI * freq / SampleRate;
-            double body = Math.Sin(phase) * bodyEnv * 0.95;
+            double body = Math.Sin(phase) * bodyEnv * 1.0;
 
-            // Sub-bass harmonic for chest-punch weight (one octave below)
+            // Sub-bass layer (one octave below) — chest-punch rumble
             double subFreq = freq * 0.5;
             phase2 += 2 * Math.PI * subFreq / SampleRate;
-            double sub = Math.Sin(phase2) * Math.Exp(-t * 9.0) * 0.35;
+            double sub = Math.Sin(phase2) * Math.Exp(-t * 6.0) * 0.6;
 
-            // Subtle beater click — just enough for definition, not dominant
+            // Second harmonic (one octave above) — adds perceived loudness
+            phase3 += 2 * Math.PI * (freq * 2) / SampleRate;
+            double harmonic = Math.Sin(phase3) * Math.Exp(-t * 12.0) * 0.25;
+
+            // Subtle beater click — just enough attack definition
             double click = 0;
             if (t < 0.008)
             {
                 double clickEnv = Math.Exp(-t * 450);
-                click += Math.Sin(2 * Math.PI * 3000 * t) * 0.12 * clickEnv;
+                click += Math.Sin(2 * Math.PI * 3000 * t) * 0.15 * clickEnv;
                 click += (rng.NextDouble() * 2 - 1) * 0.08 * Math.Exp(-t * 600);
             }
 
-            double sample = body + sub + click;
+            double sample = body + sub + harmonic + click;
 
-            // Soft saturation for warmth, not aggression
-            sample = Math.Tanh(sample * 1.1);
+            // Heavy saturation — drives loudness and adds grit/warmth
+            sample = Math.Tanh(sample * 1.8);
 
-            float s = (float)(sample * 1.0);
+            // Final output gain boost
+            float s = (float)(sample * 1.4);
             buffer[i * 2] = s;
             buffer[i * 2 + 1] = s;
         }
